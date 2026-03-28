@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment Variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads
+uploads/
+temp/
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
