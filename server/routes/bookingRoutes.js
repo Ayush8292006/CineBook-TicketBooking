@@ -5,7 +5,7 @@ import {
 //   getUserBookings,
 //   cancelBooking,
 //   confirmPayment
-} from "../controllers/BookingController.js";
+} from "../controllers/bookingController.js";
 
 // import { requireAuth } from "@clerk/express";
 
