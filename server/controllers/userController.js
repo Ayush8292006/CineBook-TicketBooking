@@ -5,9 +5,17 @@ import Movie from "../models/Movie.js";
 // API CONTROLLER FUNCTION TO GET USER BOOKINGS
 export const getUserBookings = async (req, res) => {
   try {
-    const user = req.auth().userId;
+    // ✅ FIXED - req.auth is an object, not a function
+    const userId = req.auth?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Unauthorized: User ID not found" 
+      });
+    }
 
-    const bookings = await Booking.find({ user})
+    const bookings = await Booking.find({ user: userId })
       .populate({
         path: "show",
         populate: { path: "movie" },
@@ -17,7 +25,7 @@ export const getUserBookings = async (req, res) => {
     res.json({ success: true, bookings });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -25,8 +33,24 @@ export const getUserBookings = async (req, res) => {
 export const updateFavorite = async (req, res) => {
   try {
     const { movieId } = req.body;
+    
+    if (!movieId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Movie ID is required" 
+      });
+    }
 
-    const userId = req.auth().userId;
+    // ✅ FIXED - req.auth is an object, not a function
+    const userId = req.auth?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Unauthorized: User ID not found" 
+      });
+    }
+
     const user = await clerkClient.users.getUser(userId);
 
     if (!user.privateMetadata.favorites) {
@@ -48,14 +72,24 @@ export const updateFavorite = async (req, res) => {
     res.json({ success: true, message: "Favorite movies updated." });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // API CONTROLLER FUNCTION TO GET FAVORITE MOVIES
 export const getFavorites = async (req, res) => {
   try {
-    const user = await clerkClient.users.getUser(req.auth().userId);
+    // ✅ FIXED - req.auth is an object, not a function
+    const userId = req.auth?.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Unauthorized: User ID not found" 
+      });
+    }
+
+    const user = await clerkClient.users.getUser(userId);
     const favorites = user.privateMetadata.favorites || [];
 
     const movies = await Movie.find({ _id: { $in: favorites } });
@@ -63,6 +97,6 @@ export const getFavorites = async (req, res) => {
     res.json({ success: true, movies });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
