@@ -433,9 +433,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
                                 
                                 <p><strong>Important:</strong> Please arrive at least 15 minutes before showtime. Present this email or your booking ID at the counter.</p>
                                 
-                                <div style="text-align: center;">
-                                    <a href="${process.env.FRONTEND_URL}/my-bookings" class="button">View My Bookings</a>
-                                </div>
+                               
                             </div>
                             
                             <div class="footer">
