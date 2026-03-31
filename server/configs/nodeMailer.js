@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async ({ to, subject, html, text }) => {
     try {
         const response = await transporter.sendMail({
-            from: process.env.SENDER_EMAIL,
+             from: `"CineBook" <${process.env.SENDER_EMAIL}>`,
             to,
             subject,
             html: html,  // HTML version (styling)

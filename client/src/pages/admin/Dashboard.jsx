@@ -17,7 +17,7 @@ import { useAppContext } from '../../context/AppContext';
 
 const Dashboard = () => {
 
-  const { axios, getToken, user,image_base_url, backendUrl } = useAppContext();
+  const { axios, getToken, user, image_base_url, backendUrl } = useAppContext();
   const currency = import.meta.env.VITE_CURRENCY
 
   const [dashboardData, setDashboardData] = useState({
@@ -29,31 +29,32 @@ const Dashboard = () => {
 
   const [loading, setLoading] = useState(true)
 
+  // ✅ FIXED: Safe access with optional chaining
   const dashboardCards = [
     {
       title: "Total Bookings",
-      value: dashboardData.totalBookings.toLocaleString() || "0",
+      value: dashboardData.totalBookings?.toLocaleString() || "0",
       icon: ChartLineIcon,
       color: "from-blue-500/20 to-blue-600/5",
       iconColor: "text-blue-400"
     },
     {
       title: "Revenue",
-      value: `${currency}${dashboardData.totalRevenue.toLocaleString() || 0}`,
+      value: `${currency}${dashboardData.totalRevenue?.toLocaleString() || 0}`,
       icon: CircleDollarSignIcon,
       color: "from-emerald-500/20 to-emerald-600/5",
       iconColor: "text-emerald-400"
     },
     {
       title: "Active Shows",
-      value: dashboardData.activeShows.length || "0",
+      value: dashboardData.activeShows?.length || "0",
       icon: PlayCircleIcon,
       color: "from-amber-500/20 to-amber-600/5",
       iconColor: "text-amber-400"
     },
     {
       title: "Total Users",
-      value: dashboardData.totalUser || "0",
+      value: dashboardData.totalUser?.toLocaleString() || "0",
       icon: UsersIcon,
       color: "from-purple-500/20 to-purple-600/5",
       iconColor: "text-purple-400"
@@ -71,7 +72,6 @@ const Dashboard = () => {
         return
       }
       
-      // ✅ FIX: Use backendUrl
       const { data } = await axios.get(`${backendUrl}/api/admin/dashboard`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -144,7 +144,7 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-8">
-        {dashboardData.activeShows.length > 0 ? (
+        {dashboardData.activeShows && dashboardData.activeShows.length > 0 ? (
           dashboardData.activeShows.map((show) => (
             <div 
               key={show._id} 
@@ -152,8 +152,8 @@ const Dashboard = () => {
             >
               <div className="relative aspect-[2/3] overflow-hidden">
                 <img 
-                  src={image_base_url+show.movie.poster_path} 
-                  alt={show.movie.title} 
+                  src={image_base_url + show.movie?.poster_path} 
+                  alt={show.movie?.title || "Movie"} 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 group-hover:rotate-1" 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
@@ -165,20 +165,20 @@ const Dashboard = () => {
 
               <div className="p-4">
                 <h3 className="font-bold text-sm truncate text-white group-hover:text-primary transition-colors">
-                  {show.movie.title}
+                  {show.movie?.title || "Unknown Movie"}
                 </h3>
                 
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-1.5">
                     <StarIcon className="w-3.5 h-3.5 text-primary fill-primary" />
                     <span className="text-xs font-bold text-gray-300">
-                      {show.movie.vote_average?.toFixed(1)}
+                      {show.movie?.vote_average?.toFixed(1) || "N/A"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 text-gray-500">
                     <Calendar className="w-3.5 h-3.5" />
                     <span className="text-[10px] font-medium uppercase tracking-wider">
-                      {dateFormat(show.showDateTime).split(',')[0]}
+                      {show.showDateTime ? dateFormat(show.showDateTime).split(',')[0] : "TBD"}
                     </span>
                   </div>
                 </div>
