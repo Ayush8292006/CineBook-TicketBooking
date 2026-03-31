@@ -180,7 +180,7 @@ const releaseSeatAndDeleteBooking = inngest.createFunction(
             console.log(`⏰ Starting timer for booking: ${bookingId}`);
             
             // Wait for 10 minutes
-            const tenMinutesLater = new Date(Date.now() + 10 * 60 * 1000);
+            const tenMinutesLater = new Date(Date.now() + 1 * 60 * 1000);
             await step.sleepUntil('wait-for-10-minutes', tenMinutesLater);
             
             console.log(`⏰ 10 minutes passed for booking: ${bookingId}`);
@@ -437,7 +437,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
                             </div>
                             
                             <div class="footer">
-                                <p>© ${new Date().getFullYear()} CineBook. All rights reserved.</p>
+                                <p>copyright © ${new Date().getFullYear()} CineBook. All rights reserved.</p>
                                 <p>For any queries, contact us at support@cinebook.com</p>
                                 <p style="margin-top: 12px; font-size: 11px;">This is a system generated email, please do not reply.</p>
                             </div>
@@ -492,6 +492,8 @@ View your bookings: ${process.env.FRONTEND_URL}/my-bookings
         }
     }
 );
+
+
 
 // Export all functions
 export const functions = [
