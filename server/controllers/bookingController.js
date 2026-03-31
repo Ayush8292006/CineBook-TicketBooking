@@ -1,3 +1,4 @@
+import { inngest } from "../inngest/index.js";
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
 import Stripe from "stripe";
@@ -123,6 +124,10 @@ export const createBooking = async (req, res) => {
       },
       quantity: 1,
     }];
+
+    console.log("✅ Creating Stripe session with:");
+console.log("   Success URL:", `${origin}/my-bookings?success=true&bookingId=${booking._id}`);
+console.log("   Cancel URL:", `${origin}/my-bookings?canceled=true`);
     
     // Create Stripe checkout session
     const session = await stripeInstance.checkout.sessions.create({
@@ -145,6 +150,12 @@ export const createBooking = async (req, res) => {
     
     console.log("✅ Stripe session created:", session.id);
     console.log("=" .repeat(50));
+
+    // run inngest shedular function to release seats if not paid in 10 minutes
+    await inngest.send({
+      name: 'app/checkpayment',
+      data: { bookingId: booking._id.toString() }
+    })
     
     res.json({
       success: true,

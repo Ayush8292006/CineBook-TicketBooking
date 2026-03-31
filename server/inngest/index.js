@@ -1,5 +1,7 @@
 import { Inngest } from "inngest";
 import User from "../models/User.js";
+import Booking from "../models/Booking.js";
+import Show from "../models/Show.js";
 
 export const inngest = new Inngest({ id: "movie-ticket-booking" });
 
@@ -36,7 +38,6 @@ const getUserName = (data) => {
     // Try email (fallback)
     if (data.email_addresses && data.email_addresses[0] && data.email_addresses[0].email_address) {
         const emailName = data.email_addresses[0].email_address.split('@')[0];
-        // Capitalize first letter
         return emailName.charAt(0).toUpperCase() + emailName.slice(1);
     }
     
@@ -58,13 +59,10 @@ const syncUserCreation = inngest.createFunction(
             const id = data.id;
             const email = data.email_addresses?.[0]?.email_address;
             const image = data.image_url || "";
-            
-            // Get proper name
             const name = getUserName(data);
             
             console.log("Creating user with:", { id, name, email, image });
             
-            // Check if user already exists
             const existingUser = await User.findById(id);
             if (existingUser) {
                 console.log("User already exists, updating instead...");
@@ -80,17 +78,14 @@ const syncUserCreation = inngest.createFunction(
                 };
             }
             
-            // Create new user
-            const userData = {
+            const newUser = await User.create({
                 _id: id,
                 name: name,
                 email: email,
                 image: image
-            };
+            });
             
-            const newUser = await User.create(userData);
             console.log("✅ User created:", newUser);
-            
             return { 
                 success: true, 
                 message: "User created successfully",
@@ -144,8 +139,6 @@ const syncUserUpdation = inngest.createFunction(
             const id = data.id;
             const email = data.email_addresses?.[0]?.email_address;
             const image = data.image_url || "";
-            
-            // Get proper name
             const name = getUserName(data);
             
             console.log("Updating user:", { id, name, email, image });
@@ -174,8 +167,68 @@ const syncUserUpdation = inngest.createFunction(
     }
 );
 
+// ✅ FIXED: Release seats and delete booking after 10 minutes if not paid
+const releaseSeatAndDeleteBooking = inngest.createFunction(
+    { 
+        id: 'release-seats-delete-booking',
+        triggers: [{ event: 'app/checkpayment' }]  // ✅ Fixed syntax
+    },
+    async ({ event, step }) => {
+        try {
+            const bookingId = event.data.bookingId;
+            console.log(`⏰ Starting timer for booking: ${bookingId}`);
+            
+            // Wait for 10 minutes
+            const tenMinutesLater = new Date(Date.now() + 10 * 60 * 1000);
+            await step.sleepUntil('wait-for-10-minutes', tenMinutesLater);
+            
+            console.log(`⏰ 10 minutes passed for booking: ${bookingId}`);
+            
+            // Check payment status
+            await step.run('check-payment-status', async () => {
+                const booking = await Booking.findById(bookingId);
+                
+                if (!booking) {
+                    console.log(`Booking ${bookingId} not found, already deleted`);
+                    return;
+                }
+                
+                // If payment not made, release seats and delete booking
+                if (!booking.isPaid) {
+                    console.log(`💸 Payment not made for booking ${bookingId}, releasing seats...`);
+                    
+                    const show = await Show.findById(booking.show);
+                    if (show) {
+                        // Release seats
+                        booking.bookedSeats.forEach((seat) => {
+                            delete show.occupiedSeats[seat];
+                        });
+                        show.markModified('occupiedSeats');
+                        await show.save();
+                        console.log(`✅ Seats released for show ${show._id}`);
+                    }
+                    
+                    // Delete booking
+                    await Booking.findByIdAndDelete(booking._id);
+                    console.log(`✅ Booking ${bookingId} deleted`);
+                } else {
+                    console.log(`✅ Payment made for booking ${bookingId}, keeping seats`);
+                }
+            });
+            
+            return { success: true, message: "Booking processed" };
+            
+        } catch (error) {
+            console.error("❌ Error in releaseSeatAndDeleteBooking:", error);
+            return { success: false, error: error.message };
+        }
+    }
+);
+
+// Export all functions
 export const functions = [
     syncUserCreation,
     syncUserDeletion,
-    syncUserUpdation
+    syncUserUpdation,
+    releaseSeatAndDeleteBooking 
 ];

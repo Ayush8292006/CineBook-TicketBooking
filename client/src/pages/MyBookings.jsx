@@ -1,40 +1,66 @@
 import React, { useEffect, useState } from 'react'
-import { dummyBookingData } from '../assets/assets'
+import { useSearchParams, Link,useLocation  } from 'react-router-dom'
 import Loading from '../components/Loading'
 import BlurCircle from '../components/BlurCircle'
 import timeFormat from '../lib/timeFormat'
 import { dateFormat } from '../lib/dateFormate'
 import { CalendarIcon, ClockIcon, TicketIcon, MapPinIcon, CreditCardIcon, ChevronRightIcon, StarIcon } from 'lucide-react'
 import { useAppContext } from '../context/AppContext'
+import toast from 'react-hot-toast'
 
 const MyBookings = () => {
 
-     const {  axios, getToken, user, backendUrl, image_base_url } = useAppContext()
+    const { axios, getToken, user, backendUrl, image_base_url } = useAppContext()
     const currency = import.meta.env.VITE_CURRENCY || '₹'
+    const [searchParams] = useSearchParams()
 
     const [bookings, setBookings] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [hoveredCard, setHoveredCard] = useState(null)
+    const location = useLocation();
 
-    const getMyBookings = async() => {
-        try{
-            const {data} = await axios.get(`${backendUrl}/api/user/bookings`, {
+ useEffect(() => {
+    const success = searchParams.get('success');
+    const canceled = searchParams.get('canceled');
+    const bookingId = searchParams.get('bookingId');
+    
+    console.log("🔍 URL Path:", location.pathname);
+    console.log("🔍 Full URL:", window.location.href);
+    console.log("🔍 Success param:", success);
+    console.log("🔍 Canceled param:", canceled);
+    
+    if (success === 'true') {
+        console.log("✅ Payment success!");
+        toast.success("Payment successful! Your tickets are booked.");
+        window.history.replaceState({}, '', '/my-bookings');
+        setTimeout(() => getMyBookings(), 500);
+    } else if (canceled === 'true') {
+        console.log("❌ Payment cancelled");
+        toast.error("Payment was cancelled. Please try again.");
+        window.history.replaceState({}, '', '/my-bookings');
+    }
+}, [searchParams, location]);
+
+    const getMyBookings = async () => {
+        try {
+            const token = await getToken()
+            const { data } = await axios.get(`${backendUrl}/api/user/bookings`, {
                 headers: {
-                    Authorization: `Bearer ${await getToken()}`
+                    Authorization: `Bearer ${token}`
                 }
             })
 
-            if(data.success){
+            if (data.success) {
                 setBookings(data.bookings || [])
             }
-        }catch(error){
+        } catch (error) {
             console.error("Error fetching bookings:", error)
         }
         setIsLoading(false)
     }
 
     useEffect(() => {
-        if(user){
+        if (user) {
             getMyBookings()
         }
     }, [user])
@@ -49,7 +75,11 @@ const MyBookings = () => {
         return isPaid ? 'Confirmed ✓' : 'Pending ⏳'
     }
 
-    return !isLoading ? (
+    if (isLoading) {
+        return <Loading />
+    }
+
+    return (
         <div className='relative min-h-screen bg-black text-white pt-28 pb-20 px-6 md:px-16 lg:px-40'>
             
             {/* Background Blur Circles */}
@@ -74,13 +104,13 @@ const MyBookings = () => {
                         <div className='bg-gray-900 rounded-xl px-4 py-2 border border-gray-800'>
                             <p className='text-xs text-gray-500'>Total Spent</p>
                             <p className='text-xl font-bold text-primary'>
-                                {currency}{bookings.reduce((sum, item) => sum + item.amount, 0)}
+                                {currency}{bookings.reduce((sum, item) => sum + (item.amount || 0), 0)}
                             </p>
                         </div>
                         <div className='bg-gray-900 rounded-xl px-4 py-2 border border-gray-800'>
                             <p className='text-xs text-gray-500'>Total Tickets</p>
                             <p className='text-xl font-bold text-white'>
-                                {bookings.reduce((sum, item) => sum + item.bookedSeats.length, 0)}
+                                {bookings.reduce((sum, item) => sum + (item.bookedSeats?.length || 0), 0)}
                             </p>
                         </div>
                     </div>
@@ -92,7 +122,7 @@ const MyBookings = () => {
                 <div className='space-y-4'>
                     {bookings.map((item, index) => (
                         <div 
-                            key={index} 
+                            key={item._id || index} 
                             className='bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10'
                             onMouseEnter={() => setHoveredCard(index)}
                             onMouseLeave={() => setHoveredCard(null)}
@@ -102,8 +132,8 @@ const MyBookings = () => {
                                 {/* Poster */}
                                 <div className='flex gap-4 flex-1'>
                                     <img 
-                                        src={image_base_url+item.show.movie.poster_path} 
-                                        alt={item.show.movie.title} 
+                                        src={image_base_url + item.show?.movie?.poster_path} 
+                                        alt={item.show?.movie?.title} 
                                         className='w-24 h-32 object-cover rounded-lg'
                                         onError={(e) => {
                                             e.target.src = 'https://via.placeholder.com/200x300?text=No+Image'
@@ -114,21 +144,21 @@ const MyBookings = () => {
                                     <div className='flex flex-col justify-between py-1'>
                                         <div>
                                             <h3 className='text-lg font-bold text-white mb-2'>
-                                                {item.show.movie.title}
+                                                {item.show?.movie?.title}
                                             </h3>
                                             
                                             <div className='flex flex-wrap gap-3 text-xs text-gray-400'>
                                                 <div className='flex items-center gap-1'>
                                                     <ClockIcon className='w-3 h-3' />
-                                                    <span>{timeFormat(item.show.movie.runtime)}</span>
+                                                    <span>{timeFormat(item.show?.movie?.runtime)}</span>
                                                 </div>
                                                 <div className='flex items-center gap-1'>
                                                     <CalendarIcon className='w-3 h-3' />
-                                                    <span>{dateFormat(item.show.showDateTime)}</span>
+                                                    <span>{dateFormat(item.show?.showDateTime)}</span>
                                                 </div>
                                                 <div className='flex items-center gap-1'>
                                                     <StarIcon className='w-3 h-3 text-primary' />
-                                                    <span>{item.show.movie.vote_average?.toFixed(1)}</span>
+                                                    <span>{item.show?.movie?.vote_average?.toFixed(1)}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -160,17 +190,22 @@ const MyBookings = () => {
                                     <div className='text-right text-sm space-y-1'>
                                         <div className='flex items-center gap-2 justify-end'>
                                             <TicketIcon className='w-3 h-3 text-primary' />
-                                            <p><span className='text-gray-500'>Tickets:</span> <span className='font-semibold'>{item.bookedSeats.length}</span></p>
+                                            <p><span className='text-gray-500'>Tickets:</span> <span className='font-semibold'>{item.bookedSeats?.length || 0}</span></p>
                                         </div>
-                                        <p><span className='text-gray-500'>Seats:</span> <span className='font-semibold text-primary'>{item.bookedSeats.join(", ")}</span></p>
+                                        <p><span className='text-gray-500'>Seats:</span> <span className='font-semibold text-primary'>{item.bookedSeats?.join(", ") || "N/A"}</span></p>
                                     </div>
                                     
-                                    {/* Button */}
-                                    {!item.isPaid && (
-                                        <button className='px-5 py-2 bg-primary hover:bg-primary-dull rounded-full text-black font-medium text-sm transition hover:scale-105 flex items-center gap-2'>
+                                    {/* Pay Now Button - Only show if NOT paid */}
+                                    {!item.isPaid && item.paymentLink && (
+                                        <a 
+                                            href={item.paymentLink} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className='px-5 py-2 bg-primary hover:bg-primary-dull rounded-full text-black font-medium text-sm transition hover:scale-105 flex items-center gap-2'
+                                        >
                                             <CreditCardIcon className='w-3 h-3' />
                                             Pay Now
-                                        </button>
+                                        </a>
                                     )}
                                     
                                     {item.isPaid && (
@@ -195,7 +230,7 @@ const MyBookings = () => {
                         You haven't made any bookings yet. Start exploring movies!
                     </p>
                     <button 
-                                        onClick={() => window.location.href = '/movies'}
+                        onClick={() => window.location.href = '/movies'}
                         className='mt-6 px-6 py-2 bg-primary hover:bg-primary-dull rounded-full font-medium text-black transition hover:scale-105'
                     >
                         Browse Movies
@@ -203,7 +238,7 @@ const MyBookings = () => {
                 </div>
             )}
         </div>
-    ) : <Loading />
+    )
 }
 
 export default MyBookings

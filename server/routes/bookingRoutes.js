@@ -4,6 +4,7 @@ import {
   getOccupiedSeats
 } from "../controllers/bookingController.js";
 import { requireAuth } from "@clerk/express";
+import Booking from "../models/Booking.js"; // ✅ Add this import
 
 const bookingRouter = express.Router();
 
@@ -21,6 +22,31 @@ bookingRouter.get('/check-auth', requireAuth(), (req, res) => {
     userId: auth?.userId,
     message: "Auth is working!"
   });
+});
+
+// ✅ ADD THIS ROUTE - Manual update booking
+bookingRouter.post("/update/:bookingId", requireAuth(), async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+        const { isPaid } = req.body;
+        
+        console.log("📝 Updating booking:", bookingId, "isPaid:", isPaid);
+        
+        const booking = await Booking.findByIdAndUpdate(
+            bookingId, 
+            { isPaid: isPaid },
+            { new: true }
+        );
+        
+        if (!booking) {
+            return res.status(404).json({ success: false, message: "Booking not found" });
+        }
+        
+        res.json({ success: true, booking });
+    } catch (error) {
+        console.error("Update error:", error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 // Main routes with authentication
