@@ -228,7 +228,7 @@ const releaseSeatAndDeleteBooking = inngest.createFunction(
 
 // inngest function to send email when user books a show
 
-// PROFESSIONAL EMAIL FUNCTION with Attractive Styling
+// ✅ PROFESSIONAL EMAIL FUNCTION with HTML Styling
 const sendBookingConfirmationEmail = inngest.createFunction(
     { 
         id: 'send-booking-confirmation-email',
@@ -269,7 +269,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
                 minute: '2-digit'
             });
             
-            // Professional HTML Email Template with Attractive Design
+            // Professional HTML Email Template
             const emailHtml = `
                 <!DOCTYPE html>
                 <html>
@@ -278,261 +278,171 @@ const sendBookingConfirmationEmail = inngest.createFunction(
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Booking Confirmation - CineBook</title>
                     <style>
-                        * {
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                            line-height: 1.6;
+                            color: #333;
+                            background-color: #f4f4f5;
                             margin: 0;
                             padding: 0;
-                            box-sizing: border-box;
-                        }
-                        body {
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            padding: 40px 20px;
                         }
                         .container {
                             max-width: 600px;
                             margin: 0 auto;
-                            background: #ffffff;
-                            border-radius: 24px;
-                            overflow: hidden;
-                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                            padding: 20px;
                         }
-                        .header {
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                            padding: 48px 32px;
+                        .email-card {
+                            background: #ffffff;
+                            border-radius: 16px;
+                            overflow: hidden;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                        }
+                        .email-header {
+                            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                            padding: 32px 24px;
                             text-align: center;
-                            position: relative;
-                            overflow: hidden;
                         }
-                        .header::before {
-                            content: "🎬";
-                            position: absolute;
-                            font-size: 120px;
-                            opacity: 0.1;
-                            bottom: -20px;
-                            right: -20px;
-                            transform: rotate(-10deg);
-                        }
-                        .header h1 {
-                            color: #ffffff;
-                            font-size: 32px;
-                            font-weight: 700;
-                            margin-bottom: 8px;
-                            letter-spacing: -0.5px;
-                        }
-                        .header p {
-                            color: rgba(255, 255, 255, 0.9);
-                            font-size: 16px;
-                        }
-                        .content {
-                            padding: 40px 32px;
-                            background: #ffffff;
-                        }
-                        .greeting {
-                            font-size: 18px;
-                            color: #1f2937;
-                            margin-bottom: 24px;
-                            line-height: 1.5;
-                        }
-                        .greeting strong {
-                            color: #667eea;
-                            font-weight: 600;
-                        }
-                        .booking-card {
-                            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-                            border-radius: 20px;
-                            padding: 24px;
-                            margin: 24px 0;
-                            border: 1px solid #e2e8f0;
-                        }
-                        .movie-title {
-                            font-size: 24px;
-                            font-weight: 700;
-                            color: #1e293b;
-                            margin-bottom: 20px;
-                            padding-bottom: 16px;
-                            border-bottom: 2px solid #e2e8f0;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                        }
-                        .movie-title span {
-                            background: #667eea;
+                        .email-header h1 {
                             color: white;
-                            font-size: 12px;
-                            padding: 2px 8px;
-                            border-radius: 20px;
+                            margin: 0;
+                            font-size: 28px;
+                            font-weight: 700;
                         }
-                        .details-grid {
-                            display: grid;
-                            grid-template-columns: repeat(2, 1fr);
-                            gap: 16px;
+                        .email-header p {
+                            color: rgba(255, 255, 255, 0.9);
+                            margin: 8px 0 0;
+                            font-size: 14px;
                         }
-                        .detail-item {
+                        .email-body {
+                            padding: 32px 24px;
+                        }
+                        .booking-details {
+                            background: #f9fafb;
+                            border-radius: 12px;
+                            padding: 20px;
+                            margin: 20px 0;
+                        }
+                        .detail-row {
                             display: flex;
-                            flex-direction: column;
-                            gap: 4px;
+                            justify-content: space-between;
+                            padding: 12px 0;
+                            border-bottom: 1px solid #e5e7eb;
+                        }
+                        .detail-row:last-child {
+                            border-bottom: none;
                         }
                         .detail-label {
-                            font-size: 12px;
-                            font-weight: 500;
-                            color: #64748b;
-                            text-transform: uppercase;
-                            letter-spacing: 0.5px;
+                            font-weight: 600;
+                            color: #4b5563;
                         }
                         .detail-value {
-                            font-size: 16px;
-                            font-weight: 600;
-                            color: #1e293b;
+                            color: #1f2937;
+                            font-weight: 500;
+                        }
+                        .movie-title {
+                            font-size: 20px;
+                            font-weight: 700;
+                            color: #6366f1;
+                            margin-bottom: 8px;
                         }
                         .seats-badge {
-                            background: #667eea;
-                            color: white;
+                            display: inline-block;
+                            background: #e0e7ff;
+                            color: #6366f1;
                             padding: 4px 12px;
                             border-radius: 20px;
                             font-size: 14px;
                             font-weight: 500;
-                            display: inline-block;
                         }
-                        .amount-section {
-                            margin-top: 20px;
-                            padding-top: 16px;
-                            border-top: 2px solid #e2e8f0;
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                        }
-                        .amount-label {
-                            font-size: 14px;
-                            font-weight: 500;
-                            color: #64748b;
-                        }
-                        .amount-value {
-                            font-size: 28px;
+                        .total-amount {
+                            font-size: 24px;
                             font-weight: 700;
                             color: #10b981;
                         }
-                        .message {
-                            background: #fef3c7;
-                            border-left: 4px solid #f59e0b;
-                            padding: 16px;
-                            margin: 24px 0;
-                            border-radius: 12px;
-                        }
-                        .message p {
-                            color: #92400e;
-                            font-size: 14px;
-                            line-height: 1.5;
-                        }
-                        .thankyou {
-                            text-align: center;
-                            margin: 32px 0 24px;
-                        }
-                        .thankyou h3 {
-                            font-size: 20px;
-                            font-weight: 600;
-                            color: #1e293b;
-                            margin-bottom: 8px;
-                        }
-                        .thankyou p {
-                            color: #64748b;
-                            font-size: 14px;
-                        }
                         .footer {
-                            background: #f8fafc;
-                            padding: 32px;
+                            background: #f9fafb;
+                            padding: 24px;
                             text-align: center;
-                            border-top: 1px solid #e2e8f0;
+                            border-top: 1px solid #e5e7eb;
                         }
                         .footer p {
-                            color: #64748b;
+                            margin: 0;
+                            color: #6b7280;
                             font-size: 12px;
-                            margin-bottom: 8px;
                         }
-                        .footer .brand {
-                            color: #667eea;
+                        .button {
+                            display: inline-block;
+                            background: #6366f1;
+                            color: white;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            text-decoration: none;
                             font-weight: 600;
-                            font-size: 14px;
-                            margin-bottom: 12px;
+                            margin-top: 20px;
+                        }
+                        .button:hover {
+                            background: #4f46e5;
                         }
                         @media (max-width: 480px) {
-                            .content {
-                                padding: 24px 20px;
+                            .email-body {
+                                padding: 24px 16px;
                             }
-                            .details-grid {
-                                grid-template-columns: 1fr;
-                                gap: 12px;
-                            }
-                            .movie-title {
-                                font-size: 20px;
-                            }
-                            .amount-value {
-                                font-size: 24px;
+                            .detail-row {
+                                flex-direction: column;
+                                gap: 4px;
                             }
                         }
                     </style>
                 </head>
                 <body>
                     <div class="container">
-                        <div class="header">
-                            <h1>✨ Booking Confirmed!</h1>
-                            <p>Your movie experience awaits</p>
-                        </div>
-                        
-                        <div class="content">
-                            <div class="greeting">
-                                Hello <strong>${user?.name || 'Movie Lover'}!</strong>
+                        <div class="email-card">
+                            <div class="email-header">
+                                <h1>🎬 Booking Confirmed!</h1>
+                                <p>Your movie tickets are ready</p>
                             </div>
                             
-                            <p style="color: #4b5563; margin-bottom: 16px;">
-                                Thank you for choosing <strong style="color: #667eea;">CineBook</strong>. Your booking has been successfully confirmed and payment received.
-                            </p>
-                            
-                            <div class="booking-card">
-                                <div class="movie-title">
-                                    🎬 ${movie?.title}
-                                    <span>${movie?.release_date?.split('-')[0] || 'NEW'}</span>
-                                </div>
+                            <div class="email-body">
+                                <p>Hi <strong>${user?.name || 'Movie Lover'}</strong>,</p>
+                                <p>Thank you for booking with <strong>CineBook</strong>! Your payment has been successfully processed. Here are your booking details:</p>
                                 
-                                <div class="details-grid">
-                                    <div class="detail-item">
-                                        <span class="detail-label">📅 Show Date</span>
+                                <div class="booking-details">
+                                    <div class="movie-title">🎥 ${movie?.title}</div>
+                                    
+                                    <div class="detail-row">
+                                        <span class="detail-label">📅 Date</span>
                                         <span class="detail-value">${formattedDate}</span>
                                     </div>
-                                    <div class="detail-item">
-                                        <span class="detail-label">⏰ Show Time</span>
+                                    <div class="detail-row">
+                                        <span class="detail-label">⏰ Time</span>
                                         <span class="detail-value">${formattedTime}</span>
                                     </div>
-                                    <div class="detail-item">
+                                    <div class="detail-row">
                                         <span class="detail-label">💺 Seats</span>
                                         <span class="detail-value"><span class="seats-badge">${seats || 'N/A'}</span></span>
                                     </div>
-                                    <div class="detail-item">
+                                    <div class="detail-row">
                                         <span class="detail-label">🎟️ Booking ID</span>
-                                        <span class="detail-value" style="font-family: monospace; font-size: 13px;">${booking._id.slice(-8).toUpperCase()}</span>
+                                        <span class="detail-value" style="font-family: monospace;">${booking._id}</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">💰 Total Amount</span>
+                                        <span class="detail-value total-amount">₹${amount}</span>
                                     </div>
                                 </div>
                                 
-                                <div class="amount-section">
-                                    <span class="amount-label">Total Amount Paid</span>
-                                    <span class="amount-value">₹${amount}</span>
+                                <p><strong>Important:</strong> Please arrive at least 15 minutes before showtime. Present this email or your booking ID at the counter.</p>
+                                
+                                <div style="text-align: center;">
+                                    <a href="${process.env.FRONTEND_URL}/my-bookings" class="button">View My Bookings</a>
                                 </div>
                             </div>
                             
-                            <div class="message">
-                                <p>🎯 <strong>Quick Reminder:</strong> Please arrive 15 minutes before showtime. Carry a valid ID proof. Screen your e-ticket at the entrance.</p>
+                            <div class="footer">
+                                <p>© ${new Date().getFullYear()} CineBook. All rights reserved.</p>
+                                <p>For any queries, contact us at support@cinebook.com</p>
+                                <p style="margin-top: 12px; font-size: 11px;">This is a system generated email, please do not reply.</p>
                             </div>
-                            
-                            <div class="thankyou">
-                                <h3>🎉 Thank You for Booking!</h3>
-                                <p>We hope you enjoy your movie experience. For any assistance, contact us at <strong>support@cinebook.com</strong></p>
-                            </div>
-                        </div>
-                        
-                        <div class="footer">
-                            <div class="brand">🎬 CineBook</div>
-                            <p>Experience Cinema, Redefined</p>
-                            <p style="margin-top: 16px; font-size: 11px;">This is a system-generated confirmation. Please do not reply to this email.</p>
-                            <p style="font-size: 10px;">© ${new Date().getFullYear()} CineBook. All rights reserved.</p>
                         </div>
                     </div>
                 </body>
@@ -541,38 +451,31 @@ const sendBookingConfirmationEmail = inngest.createFunction(
             
             // Plain text version as fallback
             const plainText = `
-✨ BOOKING CONFIRMED! ✨
+Booking Confirmation - ${movie?.title}
 
-Hello ${user?.name || 'Movie Lover'}!
+Hi ${user?.name || 'Movie Lover'},
 
-Thank you for choosing CineBook. Your booking has been successfully confirmed.
+Thank you for booking with CineBook! Your payment has been successfully processed.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎬 MOVIE: ${movie?.title}
-📅 DATE: ${formattedDate}
-⏰ TIME: ${formattedTime}
-💺 SEATS: ${seats}
-🎟️ BOOKING ID: ${booking._id.slice(-8).toUpperCase()}
-💰 AMOUNT: ₹${amount}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Booking Details:
+- Movie: ${movie?.title}
+- Date: ${formattedDate}
+- Time: ${formattedTime}
+- Seats: ${seats}
+- Booking ID: ${booking._id}
+- Total Amount: ₹${amount}
 
-🎯 Quick Reminder:
-• Arrive 15 minutes before showtime
-• Carry a valid ID proof
-• Screen your e-ticket at the entrance
+Please arrive at least 15 minutes before showtime.
 
-🎉 Thank You for Booking!
-We hope you enjoy your movie experience.
+View your bookings: ${process.env.FRONTEND_URL}/my-bookings
 
-For assistance: support@cinebook.com
-
-© ${new Date().getFullYear()} CineBook - Experience Cinema, Redefined
+© ${new Date().getFullYear()} CineBook
             `;
             
             // Send email
             await sendEmail({
                 to: user?.email,
-                subject: `✨ Booking Confirmed! ${movie?.title} | CineBook`,
+                subject: `🎬 Booking Confirmed! ${movie?.title} tickets booked`,
                 html: emailHtml,
                 text: plainText
             });
