@@ -1,162 +1,194 @@
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
+import Stripe from "stripe";
 
 // Check seat availability
 const checkSeatAvailability = async (showId, selectedSeats) => {
- try{
-    await Show.findById(showId)
-    if(!showData) return false;
-
-    const occupiedSeats = showData.occupiedSeats;
-
-    const isAnySeatTaken=selectedSeats.some(seat=>occupiedSeats[seat]);
-
-    return !isAnySeatTaken;
- }catch(error){
-    console.log(error.message)
-    return false;
- }
-};
-
-// CREATE BOOKING
-export const createBooking = async (req, res) => {
   try {
-    const { showId, selectedSeats } = req.body;
-    const {userId} = req.auth();
-    const {origin} = req.headers;
+    const showData = await Show.findById(showId);
+    if (!showData) return false;
 
-    const isAvailable = await checkSeatAvailability(showId, selectedSeats);
-    if (!isAvailable) {
-      return res.status(409).json({ success: false, message: "Seats already booked" });
-    }
-
-    const showData = await Show.findById(showId).populate("movie");
-
-  
-
-    const booking = await Booking.create({
-      user: userId,
-      show: showId,
-      bookedSeats: selectedSeats,
-      amount: showData.showPrice * selectedSeats.length
-     
-    });
-
-    selectedSeats.map((seat)=>{
-        showData.occupiedSeats[seat] = userId;
-    })
-
-    showData.markModified('occupiedSeats')
-
-    await showData.save();
-
-    // stripe gateway
-
-
-
-    res.json({
-      success: true,
-      message: 'Booked successfully'
-    });
-
+    const occupiedSeats = showData.occupiedSeats || {};
+    const isAnySeatTaken = selectedSeats.some(seat => occupiedSeats[seat]);
+    return !isAnySeatTaken;
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.log("checkSeatAvailability error:", error.message);
+    return false;
   }
 };
 
-export const getOccupiedSeats = async(req,res)=> {
-    try{
-        const {showId} = req.params;
-        const showData = await Show.findById(showId)
-
-        const occupiedSeats = Object.keys(showData.occupiedSeats)
-        res.json({success:true, occupiedSeats})
-
-
-
-    }catch(error){
-            res.status(500).json({ success: false, message: error.message });
+// CREATE BOOKING WITH STRIPE
+export const createBooking = async (req, res) => {
+  try {
+    console.log("=" .repeat(50));
+    console.log("📝 CREATE BOOKING CALLED");
+    
+    // Get userId from auth
+    const auth = req.auth();
+    const userId = auth?.userId;
+    console.log("👤 User ID from auth:", userId);
+    
+    if (!userId) {
+      console.log("❌ No userId found - Unauthorized");
+      return res.status(401).json({ 
+        success: false, 
+        message: "Unauthorized - Please log in" 
+      });
     }
-}
+    
+    const { showId, seats, selectedSeats, totalPrice } = req.body;
+    const seatArray = seats || selectedSeats;
+    
+    console.log("🎬 Show ID:", showId);
+    console.log("💺 Seats:", seatArray);
+    console.log("💰 Total Price:", totalPrice);
+    
+    // Validation
+    if (!showId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Show ID required" 
+      });
+    }
+    
+    if (!seatArray || seatArray.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Please select at least one seat" 
+      });
+    }
+    
+    if (seatArray.length > 5) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "You can only book up to 5 seats" 
+      });
+    }
+    
+    const showData = await Show.findById(showId).populate("movie");
+    if (!showData) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Show not found" 
+      });
+    }
+    
+    // Check seat availability
+    const isAvailable = await checkSeatAvailability(showId, seatArray);
+    if (!isAvailable) {
+      return res.status(409).json({ 
+        success: false, 
+        message: "Some seats are already booked. Please select different seats." 
+      });
+    }
+    
+    const amount = totalPrice || (showData.showPrice * seatArray.length);
+    
+    // ✅ Create booking FIRST
+    const booking = await Booking.create({
+      user: userId,
+      show: showId,
+      bookedSeats: seatArray,
+      amount: amount,
+      isPaid: false  // Set to false until payment is completed
+    });
+    
+    console.log("✅ Booking created:", booking._id);
+    
+    // ✅ Update occupied seats
+    seatArray.forEach(seat => {
+      showData.occupiedSeats[seat] = userId;
+    });
+    
+    showData.markModified('occupiedSeats');
+    await showData.save();
+    
+    console.log("✅ Show updated with occupied seats");
+    
+    // ✅ STRIPE PAYMENT GATEWAY
+    const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+    
+    // Get origin from headers
+    const origin = req.headers.origin || 'http://localhost:5173';
+    
+    // Create line items for stripe
+    const line_items = [{
+      price_data: {
+        currency: 'inr',
+        product_data: {
+          name: showData.movie.title,
+          description: `Seats: ${seatArray.join(", ")} | Show: ${new Date(showData.showDateTime).toLocaleString()}`,
+        },
+        unit_amount: Math.floor(amount) * 100  // ✅ Convert to cents
+      },
+      quantity: 1,
+    }];
+    
+    // Create Stripe checkout session
+    const session = await stripeInstance.checkout.sessions.create({
+      success_url: `${origin}/my-bookings?success=true&bookingId=${booking._id}`,
+      cancel_url: `${origin}/my-bookings?canceled=true`,
+      line_items: line_items,
+      mode: 'payment',
+      metadata: {
+        bookingId: booking._id.toString(),
+        userId: userId,
+        showId: showId,
+        seats: seatArray.join(",")
+      },
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 minutes expiry
+    });
+    
+    // Update booking with payment link
+    booking.paymentLink = session.url;
+    await booking.save();
+    
+    console.log("✅ Stripe session created:", session.id);
+    console.log("=" .repeat(50));
+    
+    res.json({
+      success: true,
+      message: "Booking created! Redirect to payment.",
+      url: session.url,
+      bookingId: booking._id
+    });
+    
+  } catch (error) {
+    console.error("❌ Create booking error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
 
-// // CONFIRM PAYMENT (Frontend payment page ke baad call hoga)
-// export const confirmPayment = async (req, res) => {
-//   try {
-//     const { bookingId } = req.params;
-//     const userId = req.auth().userId;
+// GET OCCUPIED SEATS
+export const getOccupiedSeats = async (req, res) => {
+  try {
+    const { showId } = req.params;
+    console.log("📋 Getting occupied seats for show:", showId);
+    
+    const showData = await Show.findById(showId);
+    if (!showData) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Show not found" 
+      });
+    }
+    
+    const occupiedSeats = Object.keys(showData.occupiedSeats || {});
+    console.log("📋 Occupied seats:", occupiedSeats);
+    
+    res.json({ 
+      success: true, 
+      occupiedSeats 
+    });
+  } catch (error) {
+    console.error("Get occupied seats error:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+};
 
-//     const booking = await Booking.findById(bookingId);
-
-//     if (!booking) {
-//       return res.status(404).json({ success: false });
-//     }
-
-//     if (booking.user.toString() !== userId) { // ✅ FIXED
-//       return res.status(403).json({ success: false });
-//     }
-
-//     if (booking.isPaid) {
-//       return res.status(400).json({ success: false, message: "Already paid" });
-//     }
-
-//     booking.isPaid = true;
-//     await booking.save();
-
-//     await Show.findByIdAndUpdate(booking.show, {
-//       $addToSet: { occupiedSeats: { $each: booking.bookedSeats } }
-//     });
-
-//     res.json({ success: true, message: "Payment success" });
-
-//   } catch (error) {
-//     res.status(500).json({ success: false });
-//   }
-// };
-
-// // GET USER BOOKINGS
-// export const getUserBookings = async (req, res) => {
-//   try {
-//     const userId = req.auth().userId;
-
-//     const bookings = await Booking.find({ user: userId })
-//       .populate({
-//         path: "show",
-//         populate: { path: "movie" }
-//       })
-//       .sort({ createdAt: -1 });
-
-//     res.json({ success: true, bookings });
-
-//   } catch (error) {
-//     res.status(500).json({ success: false });
-//   }
-// };
-
-// // CANCEL BOOKING
-// export const cancelBooking = async (req, res) => {
-//   try {
-//     const { bookingId } = req.params;
-//     const userId = req.auth().userId;
-
-//     const booking = await Booking.findById(bookingId);
-
-//     if (!booking) return res.status(404).json({ success: false });
-
-//     if (booking.user.toString() !== userId) {
-//       return res.status(403).json({ success: false });
-//     }
-
-//     if (booking.isPaid) {
-//       await Show.findByIdAndUpdate(booking.show, {
-//         $pull: { occupiedSeats: { $in: booking.bookedSeats } }
-//       });
-//     }
-
-//     await Booking.findByIdAndDelete(bookingId);
-
-//     res.json({ success: true });
-
-//   } catch (error) {
-//     res.status(500).json({ success: false });
-//   }
-// };

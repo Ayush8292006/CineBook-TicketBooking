@@ -25,7 +25,7 @@ export const addShow = async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    let movie = await Movie.findById(String(movieId));
+    let movie = await Movie.findById(movieId);
 
     if (!movie) {
       const [movieDetailsResponse, movieCreditResponse] = await Promise.all([

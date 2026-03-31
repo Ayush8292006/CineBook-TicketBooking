@@ -18,7 +18,7 @@ const movieSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Check if model already exists before creating
+
 const Movie = mongoose.model('Movie',movieSchema)
 
 export default Movie;

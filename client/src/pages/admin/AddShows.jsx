@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import Loading from '../../components/Loading';
 import Title from '../../components/admin/Title';
-import { dummyShowsData } from '../../assets/assets';
 import { CheckIcon, StarIcon, CalendarIcon, ClockIcon, TicketIcon, PlusIcon, XIcon, FilmIcon } from 'lucide-react';
 import { kConverter } from '../../lib/kConverter';
 import { useAppContext } from '../../context/AppContext';
+import toast from 'react-hot-toast';
 
 const AddShows = () => {
-
-  const {axios,getToken, user, image_base_url} = useAppContext()
+  const { axios, getToken, user, image_base_url, backendUrl } = useAppContext();
   const currency = import.meta.env.VITE_CURRENCY;
 
   const [nowPlayingMovies, setNowPlayingMovies] = useState([]);
@@ -17,30 +16,67 @@ const AddShows = () => {
   const [dateTimeInput, setDateTimeInput] = useState("");
   const [showPrice, setShowPrice] = useState("");
   const [hoveredMovie, setHoveredMovie] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [addingShow, setAddingShow] = useState(false);
 
+  // Fetch now playing movies
   const fetchNowPlayingMovies = async () => {
-    try{
-        const {data} = await axios.get('/api//show/now-playing',{
-          headers: { Authorization: `Bearer ${await getToken()}`}
-        })
-        if(data.success){
-            setNowPlayingMovies(data.movies)
-          }
-    }catch(error){
-        console.error('Error fetching movies:', error)
+    if (!user) {
+      console.log("No user found");
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const token = await getToken();
+      
+      if (!token) {
+        console.error("No token available");
+        toast.error("Please login again");
+        setLoading(false);
+        return;
+      }
+      
+      console.log("Fetching movies from:", `${backendUrl}/api/show/now-playing`);
+      
+      const { data } = await axios.get(`${backendUrl}/api/show/now-playing`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (data.success) {
+        console.log("Movies fetched:", data.movies?.length);
+        setNowPlayingMovies(data.movies || []);
+      } else {
+        console.error("API returned error:", data.message);
+        toast.error(data.message || "Failed to fetch movies");
+        setNowPlayingMovies([]);
+      }
+    } catch (error) {
+      console.error('Error fetching movies:', error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Please login to view movies");
+      } else if (error.response?.status === 404) {
+        toast.error("Movies endpoint not found");
+      } else {
+        toast.error("Failed to fetch movies");
+      }
+      
+      setNowPlayingMovies([]);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Add date and time to selection
   const handleDateTimeAdd = () => {
     if (!dateTimeInput) return;
-
     const [date, time] = dateTimeInput.split("T");
     if (!date || !time) return;
 
     setDateTimeSelection((prev) => {
       const times = prev[date] || [];
-
       if (!times.includes(time)) {
         return {
           ...prev,
@@ -52,6 +88,7 @@ const AddShows = () => {
     setDateTimeInput("");
   };
 
+  // Remove time from selection
   const handleRemoveTime = (date, time) => {
     setDateTimeSelection((prev) => {
       const filteredTimes = prev[date].filter((t) => t !== time);
@@ -66,33 +103,68 @@ const AddShows = () => {
     });
   };
 
-  const handleAddShow = async () => {
+  // Submit show to backend - FIXED
+  const handleSubmit = async () => {
+    // Validation
     if (!selectedMovie) {
-      alert("Please select a movie");
+      toast.error("Please select a movie");
       return;
     }
+    
     if (!showPrice || showPrice <= 0) {
-      alert("Please enter a valid show price");
+      toast.error("Please enter a valid ticket price");
       return;
     }
+    
     if (Object.keys(dateTimeSelection).length === 0) {
-      alert("Please add at least one date and time");
+      toast.error("Please add at least one show date and time");
       return;
     }
 
-    setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log({
-      movieId: selectedMovie,
-      price: showPrice,
-      schedule: dateTimeSelection
-    });
-    setIsSubmitting(false);
-    alert("Show added successfully!");
+    setAddingShow(true);
     
-    setSelectedMovie(null);
-    setShowPrice("");
-    setDateTimeSelection({});
+    try {
+      const token = await getToken();
+      
+      if (!token) {
+        toast.error("Please login again");
+        setAddingShow(false);
+        return;
+      }
+      
+      // ✅ FIX: Format showsInput correctly for backend
+      const showsInput = Object.entries(dateTimeSelection).map(([date, times]) => ({
+        date: date,
+        time: times
+      }));
+
+      const payload = {
+        movieId: selectedMovie,
+        showsInput: showsInput,
+        showPrice: Number(showPrice)
+      };
+
+      console.log("Sending payload:", payload);
+
+      const { data } = await axios.post(`${backendUrl}/api/show/add`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (data.success) {
+        toast.success("Show added successfully!");
+        // Reset form
+        setSelectedMovie(null);
+        setDateTimeSelection({});
+        setShowPrice("");
+      } else {
+        toast.error(data.message || "Failed to add show");
+      }
+    } catch (error) {
+      console.error("Error adding show:", error.response?.data || error.message);
+      toast.error(error.response?.data?.message || "Failed to add show");
+    } finally {
+      setAddingShow(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -105,15 +177,40 @@ const AddShows = () => {
   };
 
   useEffect(() => {
-    if(user){
-    fetchNowPlayingMovies();
+    if (user) {
+      fetchNowPlayingMovies();
+    } else {
+      setLoading(false);
     }
-  
   }, [user]);
 
   const totalShows = Object.values(dateTimeSelection).flat().length;
 
-  return nowPlayingMovies.length > 0 ? (
+  // Show loading state
+  if (loading) {
+    return <Loading />;
+  }
+
+  // Show message if no movies
+  if (nowPlayingMovies.length === 0) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <FilmIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-white mb-2">No Movies Available</h3>
+          <p className="text-gray-400">Check back later for new releases</p>
+          <button 
+            onClick={fetchNowPlayingMovies}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         {/* Header Section */}
@@ -160,7 +257,7 @@ const AddShows = () => {
                     : 'group-hover:shadow-2xl'
                 }`}>
                   <img 
-                    src={image_base_url+movie.poster_path} 
+                    src={image_base_url + movie.poster_path} 
                     alt={movie.title} 
                     className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
                   />
@@ -169,7 +266,7 @@ const AddShows = () => {
                   
                   <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm rounded-full px-2.5 py-1 text-xs flex items-center gap-1 border border-primary/30 shadow-lg">
                     <StarIcon className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                    <span className="text-white font-semibold">{movie.vote_average.toFixed(1)}</span>
+                    <span className="text-white font-semibold">{movie.vote_average?.toFixed(1)}</span>
                     <span className="text-gray-300 text-[10px]">({kConverter(movie.vote_count)})</span>
                   </div>
                   
@@ -267,7 +364,7 @@ const AddShows = () => {
                   </div>
                 </div>
 
-                {/* Selected Schedules - Compact Box Layout */}
+                {/* Selected Schedules */}
                 {Object.keys(dateTimeSelection).length > 0 && (
                   <div className="mt-6 animate-fade-in">
                     <div className="flex items-center gap-2 mb-3">
@@ -322,11 +419,11 @@ const AddShows = () => {
                 {/* Action Button */}
                 <div className="mt-8 pt-4 border-t border-gray-800">
                   <button
-                    onClick={handleAddShow}
-                    disabled={isSubmitting || !showPrice || totalShows === 0}
+                    onClick={handleSubmit}
+                    disabled={addingShow || !showPrice || totalShows === 0}
                     className="w-full bg-primary text-white px-6 py-3 rounded-xl hover:bg-primary/80 transition-all duration-300 font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? (
+                    {addingShow ? (
                       <>
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Adding Show...
@@ -345,72 +442,34 @@ const AddShows = () => {
         )}
       </div>
 
-      {/* Custom Animations */}
       <style jsx>{`
         @keyframes bounce-in {
-          0% {
-            transform: scale(0);
-            opacity: 0;
-          }
-          50% {
-            transform: scale(1.2);
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
+          0% { transform: scale(0); opacity: 0; }
+          50% { transform: scale(1.2); }
+          100% { transform: scale(1); opacity: 1; }
         }
         
         @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         
         @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         
         @keyframes slide-up {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         
-        .animate-bounce-in {
-          animation: bounce-in 0.3s ease-out;
-        }
-        
-        .animate-fade-in-up {
-          animation: fade-in-up 0.5s ease-out;
-        }
-        
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
-        }
-        
-        .animate-slide-up {
-          animation: slide-up 0.2s ease-out;
-        }
+        .animate-bounce-in { animation: bounce-in 0.3s ease-out; }
+        .animate-fade-in-up { animation: fade-in-up 0.5s ease-out; }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+        .animate-slide-up { animation: slide-up 0.2s ease-out; }
       `}</style>
     </div>
-  ) : (
-    <Loading />
   );
 };
 

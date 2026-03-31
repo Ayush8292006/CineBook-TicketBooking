@@ -1,24 +1,33 @@
-import { clerkClient } from "@clerk/express";
+import { getAuth } from "@clerk/express";
+import User from '../models/User.js'; // ✅ YEH IMPORT ADD KARO
 
 export const protectAdmin = async (req, res, next) => {
   try {
-    console.log("AUTH:", req.auth); // debug
-
-    const userId = req.auth?.userId;
+    const { userId } = getAuth(req);
 
     if (!userId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      console.log("❌ No userId found in request");
+      return res.status(401).json({ 
+        success: false, 
+        message: "Unauthorized - Please log in" 
+      });
     }
 
-    const user = await clerkClient.users.getUser(userId);
-
-    if (user.privateMetadata.role !== "admin") {
-      return res.status(403).json({ success: false, message: "Not Admin" });
+    // ✅ YEH PURA BLOCK CHANGE KARO - Database se check karo
+    const user = await User.findOne({ _id: userId });
+    
+    if (!user || !user.isAdmin) {
+      console.log("❌ User is not admin:", userId);
+      return res.status(403).json({ 
+        success: false, 
+        message: "Access Denied: Admin role required" 
+      });
     }
 
+    req.auth = { userId, user };
     next();
   } catch (error) {
-    console.log("Admin Error:", error);
-    res.status(500).json({ success: false });
+    console.error("Admin check error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 };

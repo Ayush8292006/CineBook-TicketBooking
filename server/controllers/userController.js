@@ -1,17 +1,19 @@
+import { getAuth } from "@clerk/express";
 import { clerkClient } from "@clerk/express";
 import Booking from "../models/Booking.js";
 import Movie from "../models/Movie.js";
 
-// API CONTROLLER FUNCTION TO GET USER BOOKINGS
+// Get User Bookings
 export const getUserBookings = async (req, res) => {
   try {
-    // ✅ FIXED - req.auth is an object, not a function
-    const userId = req.auth?.userId;
+    const { userId } = getAuth(req);
+    
+    console.log("📖 getUserBookings - userId:", userId);
     
     if (!userId) {
       return res.status(401).json({ 
         success: false, 
-        message: "Unauthorized: User ID not found" 
+        message: "Unauthorized - Please log in" 
       });
     }
 
@@ -24,79 +26,95 @@ export const getUserBookings = async (req, res) => {
 
     res.json({ success: true, bookings });
   } catch (error) {
-    console.log(error);
+    console.error("getUserBookings error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// API CONTROLLER FUNCTION TO UPDATE FAVORITE MOVIE
+// Update Favorite Movies
 export const updateFavorite = async (req, res) => {
   try {
-    const { movieId } = req.body;
+    const { userId } = getAuth(req);
     
+    console.log("❤️ updateFavorite - userId:", userId);
+    
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        message: "Unauthorized - Please log in" 
+      });
+    }
+
+    const { movieId } = req.body;
+    console.log("🎬 updateFavorite - movieId:", movieId);
+
     if (!movieId) {
       return res.status(400).json({ 
         success: false, 
-        message: "Movie ID is required" 
-      });
-    }
-
-    // ✅ FIXED - req.auth is an object, not a function
-    const userId = req.auth?.userId;
-    
-    if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Unauthorized: User ID not found" 
+        message: "Movie ID required" 
       });
     }
 
     const user = await clerkClient.users.getUser(userId);
+    let favorites = user.privateMetadata?.favorites || [];
 
-    if (!user.privateMetadata.favorites) {
-      user.privateMetadata.favorites = [];
-    }
-
-    if (!user.privateMetadata.favorites.includes(movieId)) {
-      user.privateMetadata.favorites.push(movieId);
+    let isAdding = false;
+    if (!favorites.includes(movieId)) {
+      favorites.push(movieId);
+      isAdding = true;
+      console.log("✅ Added to favorites");
     } else {
-      user.privateMetadata.favorites = user.privateMetadata.favorites.filter(
-        (item) => item !== movieId
-      );
+      favorites = favorites.filter(item => item !== movieId);
+      console.log("✅ Removed from favorites");
     }
 
-    await clerkClient.users.updateUserMetadata(userId, {
-      privateMetadata: user.privateMetadata,
+    await clerkClient.users.updateUser(userId, {
+      privateMetadata: { favorites }
     });
 
-    res.json({ success: true, message: "Favorite movies updated." });
+    res.json({ 
+      success: true, 
+      message: isAdding ? "Added to favorites" : "Removed from favorites",
+      isFavorite: isAdding
+    });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("updateFavorite error:", error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
   }
 };
 
-// API CONTROLLER FUNCTION TO GET FAVORITE MOVIES
+// Get Favorite Movies
 export const getFavorites = async (req, res) => {
   try {
-    // ✅ FIXED - req.auth is an object, not a function
-    const userId = req.auth?.userId;
+    const { userId } = getAuth(req);
+    
+    console.log("📋 getFavorites - userId:", userId);
     
     if (!userId) {
       return res.status(401).json({ 
         success: false, 
-        message: "Unauthorized: User ID not found" 
+        message: "Unauthorized - Please log in" 
       });
     }
 
     const user = await clerkClient.users.getUser(userId);
-    const favorites = user.privateMetadata.favorites || [];
+    const favorites = user.privateMetadata?.favorites || [];
+
+    console.log("📋 getFavorites - favorite IDs:", favorites);
 
     const movies = await Movie.find({ _id: { $in: favorites } });
 
+    console.log("📋 getFavorites - movies found:", movies.length);
+    
     res.json({ success: true, movies });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("getFavorites error:", error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
   }
 };

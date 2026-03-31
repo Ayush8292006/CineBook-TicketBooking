@@ -5,9 +5,11 @@ import BlurCircle from '../components/BlurCircle'
 import timeFormat from '../lib/timeFormat'
 import { dateFormat } from '../lib/dateFormate'
 import { CalendarIcon, ClockIcon, TicketIcon, MapPinIcon, CreditCardIcon, ChevronRightIcon, StarIcon } from 'lucide-react'
+import { useAppContext } from '../context/AppContext'
 
 const MyBookings = () => {
 
+     const {  axios, getToken, user, backendUrl, image_base_url } = useAppContext()
     const currency = import.meta.env.VITE_CURRENCY || '₹'
 
     const [bookings, setBookings] = useState([])
@@ -15,13 +17,27 @@ const MyBookings = () => {
     const [hoveredCard, setHoveredCard] = useState(null)
 
     const getMyBookings = async() => {
-        setBookings(dummyBookingData)
+        try{
+            const {data} = await axios.get(`${backendUrl}/api/user/bookings`, {
+                headers: {
+                    Authorization: `Bearer ${await getToken()}`
+                }
+            })
+
+            if(data.success){
+                setBookings(data.bookings || [])
+            }
+        }catch(error){
+            console.error("Error fetching bookings:", error)
+        }
         setIsLoading(false)
     }
 
     useEffect(() => {
-        getMyBookings()
-    }, [])
+        if(user){
+            getMyBookings()
+        }
+    }, [user])
 
     const getStatusColor = (isPaid) => {
         return isPaid 
@@ -86,7 +102,7 @@ const MyBookings = () => {
                                 {/* Poster */}
                                 <div className='flex gap-4 flex-1'>
                                     <img 
-                                        src={item.show.movie.poster_path} 
+                                        src={image_base_url+item.show.movie.poster_path} 
                                         alt={item.show.movie.title} 
                                         className='w-24 h-32 object-cover rounded-lg'
                                         onError={(e) => {

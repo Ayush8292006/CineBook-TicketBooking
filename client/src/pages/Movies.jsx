@@ -1,11 +1,14 @@
 import React from 'react'
-import { dummyShowsData } from '../assets/assets'
+
 import MovieCard from '../components/MovieCard'
 import BlurCircle from '../components/BlurCircle'
 import { Film, Calendar, TrendingUp, Sparkles } from 'lucide-react'
+import { useAppContext } from '../context/AppContext'
 
 const Movies = () => {
-  return dummyShowsData.length > 0 ? (
+
+  const {shows} = useAppContext()
+  return shows.length > 0 ? (
     <div className='relative pt-32 pb-20 px-6 md:px-16 lg:px-40 xl:px-44 overflow-hidden min-h-screen bg-gradient-to-b from-black via-gray-950 to-black'>
       
       {/* Background Elements */}
@@ -61,7 +64,7 @@ const Movies = () => {
 
       {/* Movie Grid */}
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8'>
-        {dummyShowsData.map((movie, index) => (
+        {shows.map((movie, index) => (
           <div
             key={movie._id}
             className='animate-slideUp'

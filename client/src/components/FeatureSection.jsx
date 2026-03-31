@@ -2,11 +2,15 @@ import { ArrowRightIcon } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import BlurCircle from './BlurCircle'
-import { dummyShowsData } from '../assets/assets'
+
 import MovieCard from './MovieCard'
+import { useAppContext } from '../context/AppContext'
+
 
 const FeatureSection = () => {
   const navigate = useNavigate()
+
+  const {shows} = useAppContext();
 
   return (
     <div className='px-6 md:px-12 lg:px-20 xl:px-32 overflow-hidden'>
@@ -30,7 +34,7 @@ const FeatureSection = () => {
 
       {/* Movies Grid */}
       <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 mt-6'>
-        {dummyShowsData.slice(0, 4).map((show) => (
+        {shows.slice(0, 4).map((show) => (
           <MovieCard key={show._id} movie={show} />
         ))}
       </div>

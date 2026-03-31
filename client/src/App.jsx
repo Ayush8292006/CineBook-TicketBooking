@@ -1,5 +1,5 @@
 import React from 'react'
-import { Route, Routes, useLocation, Navigate } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import Movies from './pages/Movies'
 import MovieDetails from './pages/MovieDetails'
@@ -16,32 +16,10 @@ import Dashboard from './pages/admin/Dashboard'
 import AddShows from './pages/admin/AddShows'
 import ListBookings from './pages/admin/ListBookings'
 import ListShows from './pages/admin/ListShows'
-import { useAppContext } from './context/AppContext'
 import { SignIn } from '@clerk/react'
+import { useAppContext } from './context/AppContext'
 import Loading from './components/Loading'
 
-// Protected Route Component for Admin
-const ProtectedAdminRoute = ({ children }) => {
-  const { user, isAdmin, isCheckingAdmin } = useAppContext()
-  
-  if (isCheckingAdmin) {
-    return <Loading />
-  }
-  
-  if (!user) {
-    return (
-      <div className='min-h-screen flex justify-center items-center'>
-        <SignIn fallbackRedirectUrl={'/admin'} />
-      </div>
-    )
-  }
-  
-  if (!isAdmin) {
-    return <Navigate to="/" replace />
-  }
-  
-  return children
-}
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith('/admin')
@@ -58,17 +36,19 @@ const App = () => {
         <Route path='/movies/:id' element={<MovieDetails />} />
         <Route path='/movies/:id/:date' element={<SeatLayout />} />
         <Route path='/my-bookings' element={<MyBookings />} />
+        <Route path='/loading/:nextUrl' element={<Loading />} />
         <Route path='/favorites' element={<Favorite />} />
         <Route path='/about' element={<AboutUs />} />
         <Route path='/legal' element={<Legal />} />
 
-        {/* Admin Routes with Protection */}
         <Route 
           path='/admin/*' 
           element={
-            <ProtectedAdminRoute>
-              <Layout />
-            </ProtectedAdminRoute>
+            user ? <Layout /> : (
+              <div className='min-h-screen flex justify-center items-center'>
+                <SignIn fallbackRedirectUrl={'/admin'} />
+              </div>
+            )
           }
         >
           <Route index element={<Dashboard />} />
