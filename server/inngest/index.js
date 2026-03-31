@@ -229,6 +229,7 @@ const releaseSeatAndDeleteBooking = inngest.createFunction(
 // inngest function to send email when user books a show
 
 // ✅ PROFESSIONAL EMAIL FUNCTION with HTML Styling
+// PROFESSIONAL EMAIL FUNCTION with Attractive Styling (No Buttons)
 const sendBookingConfirmationEmail = inngest.createFunction(
     { 
         id: 'send-booking-confirmation-email',
@@ -257,7 +258,7 @@ const sendBookingConfirmationEmail = inngest.createFunction(
             const seats = booking.bookedSeats?.join(', ');
             const amount = booking.amount;
             
-            // Format date
+            // Format date and time
             const formattedDate = new Date(showTime).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
@@ -266,10 +267,11 @@ const sendBookingConfirmationEmail = inngest.createFunction(
             });
             const formattedTime = new Date(showTime).toLocaleTimeString('en-US', {
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                hour12: true
             });
             
-            // Professional HTML Email Template
+            // Beautiful HTML Email Template - No Buttons
             const emailHtml = `
                 <!DOCTYPE html>
                 <html>
@@ -278,170 +280,345 @@ const sendBookingConfirmationEmail = inngest.createFunction(
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Booking Confirmation - CineBook</title>
                     <style>
-                        body {
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                            line-height: 1.6;
-                            color: #333;
-                            background-color: #f4f4f5;
+                        * {
                             margin: 0;
                             padding: 0;
+                            box-sizing: border-box;
+                        }
+                        body {
+                            font-family: 'Segoe UI', 'Poppins', -apple-system, BlinkMacSystemFont, 'Roboto', Helvetica, Arial, sans-serif;
+                            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                            padding: 40px 20px;
+                            min-height: 100vh;
                         }
                         .container {
-                            max-width: 600px;
+                            max-width: 580px;
                             margin: 0 auto;
-                            padding: 20px;
-                        }
-                        .email-card {
                             background: #ffffff;
-                            border-radius: 16px;
+                            border-radius: 32px;
                             overflow: hidden;
-                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
                         }
-                        .email-header {
-                            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-                            padding: 32px 24px;
+                        .header {
+                            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #3b82f6 100%);
+                            padding: 48px 32px 40px;
                             text-align: center;
+                            position: relative;
+                            overflow: hidden;
                         }
-                        .email-header h1 {
-                            color: white;
-                            margin: 0;
-                            font-size: 28px;
+                        .header::before {
+                            content: "🎬";
+                            position: absolute;
+                            font-size: 140px;
+                            opacity: 0.08;
+                            bottom: -30px;
+                            right: -30px;
+                            transform: rotate(-15deg);
+                        }
+                        .header::after {
+                            content: "🍿";
+                            position: absolute;
+                            font-size: 100px;
+                            opacity: 0.08;
+                            top: -20px;
+                            left: -20px;
+                            transform: rotate(10deg);
+                        }
+                        .header h1 {
+                            color: #ffffff;
+                            font-size: 36px;
                             font-weight: 700;
+                            margin-bottom: 12px;
+                            letter-spacing: -0.5px;
+                            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
                         }
-                        .email-header p {
-                            color: rgba(255, 255, 255, 0.9);
-                            margin: 8px 0 0;
-                            font-size: 14px;
-                        }
-                        .email-body {
-                            padding: 32px 24px;
-                        }
-                        .booking-details {
-                            background: #f9fafb;
-                            border-radius: 12px;
-                            padding: 20px;
-                            margin: 20px 0;
-                        }
-                        .detail-row {
-                            display: flex;
-                            justify-content: space-between;
-                            padding: 12px 0;
-                            border-bottom: 1px solid #e5e7eb;
-                        }
-                        .detail-row:last-child {
-                            border-bottom: none;
-                        }
-                        .detail-label {
-                            font-weight: 600;
-                            color: #4b5563;
-                        }
-                        .detail-value {
-                            color: #1f2937;
+                        .header p {
+                            color: rgba(255, 255, 255, 0.95);
+                            font-size: 16px;
                             font-weight: 500;
+                            letter-spacing: 0.3px;
+                        }
+                        .content {
+                            padding: 40px 36px;
+                            background: #ffffff;
+                        }
+                        .greeting {
+                            font-size: 18px;
+                            color: #1e293b;
+                            margin-bottom: 20px;
+                            line-height: 1.5;
+                            font-weight: 500;
+                        }
+                        .greeting strong {
+                            color: #8b5cf6;
+                            font-weight: 700;
+                            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+                            background-clip: text;
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                        }
+                        .message-text {
+                            color: #475569;
+                            font-size: 15px;
+                            line-height: 1.6;
+                            margin-bottom: 28px;
+                        }
+                        .booking-card {
+                            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+                            border-radius: 24px;
+                            padding: 28px;
+                            margin: 28px 0;
+                            border: 1px solid #e2e8f0;
+                            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
                         }
                         .movie-title {
-                            font-size: 20px;
-                            font-weight: 700;
-                            color: #6366f1;
-                            margin-bottom: 8px;
+                            font-size: 26px;
+                            font-weight: 800;
+                            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+                            background-clip: text;
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                            margin-bottom: 24px;
+                            padding-bottom: 16px;
+                            border-bottom: 2px solid #e2e8f0;
+                            display: flex;
+                            align-items: center;
+                            gap: 10px;
+                        }
+                        .movie-title span {
+                            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+                            color: white;
+                            font-size: 11px;
+                            font-weight: 600;
+                            padding: 4px 12px;
+                            border-radius: 30px;
+                            letter-spacing: 0.5px;
+                        }
+                        .details-grid {
+                            display: grid;
+                            grid-template-columns: repeat(2, 1fr);
+                            gap: 20px;
+                            margin-bottom: 24px;
+                        }
+                        .detail-item {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 6px;
+                        }
+                        .detail-label {
+                            font-size: 11px;
+                            font-weight: 600;
+                            color: #64748b;
+                            text-transform: uppercase;
+                            letter-spacing: 0.8px;
+                        }
+                        .detail-value {
+                            font-size: 16px;
+                            font-weight: 600;
+                            color: #0f172a;
                         }
                         .seats-badge {
-                            display: inline-block;
-                            background: #e0e7ff;
-                            color: #6366f1;
-                            padding: 4px 12px;
-                            border-radius: 20px;
+                            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+                            color: white;
+                            padding: 6px 16px;
+                            border-radius: 30px;
                             font-size: 14px;
-                            font-weight: 500;
+                            font-weight: 600;
+                            display: inline-block;
+                            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
                         }
-                        .total-amount {
-                            font-size: 24px;
+                        .booking-id {
+                            background: #f1f5f9;
+                            padding: 8px 16px;
+                            border-radius: 12px;
+                            font-family: 'Monaco', 'Menlo', monospace;
+                            font-size: 13px;
+                            color: #334155;
+                            letter-spacing: 0.3px;
+                            display: inline-block;
+                        }
+                        .amount-section {
+                            margin-top: 20px;
+                            padding-top: 20px;
+                            border-top: 2px solid #e2e8f0;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: baseline;
+                        }
+                        .amount-label {
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: #475569;
+                        }
+                        .amount-value {
+                            font-size: 32px;
+                            font-weight: 800;
+                            background: linear-gradient(135deg, #10b981, #059669);
+                            background-clip: text;
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                        }
+                        .info-box {
+                            background: #fffbeb;
+                            border-left: 4px solid #f59e0b;
+                            padding: 18px 20px;
+                            margin: 28px 0;
+                            border-radius: 16px;
+                        }
+                        .info-box p {
+                            color: #92400e;
+                            font-size: 13px;
+                            line-height: 1.5;
+                            margin-bottom: 8px;
+                        }
+                        .info-box p:last-child {
+                            margin-bottom: 0;
+                        }
+                        .info-icon {
+                            display: inline-block;
+                            margin-right: 8px;
+                        }
+                        .wishes {
+                            text-align: center;
+                            margin: 32px 0 24px;
+                            padding: 24px 0 16px;
+                            border-top: 1px solid #e2e8f0;
+                        }
+                        .wishes h3 {
+                            font-size: 20px;
                             font-weight: 700;
-                            color: #10b981;
+                            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+                            background-clip: text;
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                            margin-bottom: 12px;
+                        }
+                        .wishes p {
+                            color: #64748b;
+                            font-size: 14px;
+                            line-height: 1.5;
                         }
                         .footer {
-                            background: #f9fafb;
-                            padding: 24px;
+                            background: #f8fafc;
+                            padding: 32px 36px;
                             text-align: center;
-                            border-top: 1px solid #e5e7eb;
+                            border-top: 1px solid #e2e8f0;
                         }
-                        .footer p {
-                            margin: 0;
-                            color: #6b7280;
-                            font-size: 12px;
+                        .footer .brand {
+                            font-size: 20px;
+                            font-weight: 800;
+                            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+                            background-clip: text;
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                            margin-bottom: 12px;
+                            letter-spacing: -0.3px;
                         }
-                        .button {
-                            display: inline-block;
-                            background: #6366f1;
-                            color: white;
-                            padding: 12px 24px;
-                            border-radius: 8px;
-                            text-decoration: none;
-                            font-weight: 600;
-                            margin-top: 20px;
+                        .footer .tagline {
+                            color: #64748b;
+                            font-size: 13px;
+                            margin-bottom: 16px;
+                            font-weight: 500;
                         }
-                        .button:hover {
-                            background: #4f46e5;
+                        .footer .copyright {
+                            color: #94a3b8;
+                            font-size: 11px;
+                            margin-top: 16px;
+                        }
+                        hr {
+                            border: none;
+                            height: 1px;
+                            background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+                            margin: 16px 0;
                         }
                         @media (max-width: 480px) {
-                            .email-body {
-                                padding: 24px 16px;
+                            .content {
+                                padding: 28px 20px;
                             }
-                            .detail-row {
-                                flex-direction: column;
-                                gap: 4px;
+                            .details-grid {
+                                grid-template-columns: 1fr;
+                                gap: 16px;
+                            }
+                            .movie-title {
+                                font-size: 22px;
+                            }
+                            .amount-value {
+                                font-size: 26px;
+                            }
+                            .header h1 {
+                                font-size: 28px;
                             }
                         }
                     </style>
                 </head>
                 <body>
                     <div class="container">
-                        <div class="email-card">
-                            <div class="email-header">
-                                <h1>🎬 Booking Confirmed!</h1>
-                                <p>Your movie tickets are ready</p>
+                        <div class="header">
+                            <h1>Booking Confirmed ✨</h1>
+                            <p>Your cinematic experience awaits</p>
+                        </div>
+                        
+                        <div class="content">
+                            <div class="greeting">
+                                Dear <strong>${user?.name || 'Movie Enthusiast'}</strong>,
                             </div>
                             
-                            <div class="email-body">
-                                <p>Hi <strong>${user?.name || 'Movie Lover'}</strong>,</p>
-                                <p>Thank you for booking with <strong>CineBook</strong>! Your payment has been successfully processed. Here are your booking details:</p>
+                            <div class="message-text">
+                                Thank you for choosing <strong style="color: #8b5cf6;">CineBook</strong>! Your booking has been successfully confirmed and your seats are now reserved.
+                            </div>
+                            
+                            <div class="booking-card">
+                                <div class="movie-title">
+                                    🎬 ${movie?.title}
+                                    <span>${movie?.release_date?.split('-')[0] || 'NEW'}</span>
+                                </div>
                                 
-                                <div class="booking-details">
-                                    <div class="movie-title">🎥 ${movie?.title}</div>
-                                    
-                                    <div class="detail-row">
-                                        <span class="detail-label">📅 Date</span>
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">📅 SHOW DATE</span>
                                         <span class="detail-value">${formattedDate}</span>
                                     </div>
-                                    <div class="detail-row">
-                                        <span class="detail-label">⏰ Time</span>
+                                    <div class="detail-item">
+                                        <span class="detail-label">⏰ SHOW TIME</span>
                                         <span class="detail-value">${formattedTime}</span>
                                     </div>
-                                    <div class="detail-row">
-                                        <span class="detail-label">💺 Seats</span>
+                                    <div class="detail-item">
+                                        <span class="detail-label">💺 SEAT NUMBERS</span>
                                         <span class="detail-value"><span class="seats-badge">${seats || 'N/A'}</span></span>
                                     </div>
-                                    <div class="detail-row">
-                                        <span class="detail-label">🎟️ Booking ID</span>
-                                        <span class="detail-value" style="font-family: monospace;">${booking._id}</span>
-                                    </div>
-                                    <div class="detail-row">
-                                        <span class="detail-label">💰 Total Amount</span>
-                                        <span class="detail-value total-amount">₹${amount}</span>
+                                    <div class="detail-item">
+                                        <span class="detail-label">🎟️ BOOKING REFERENCE</span>
+                                        <span class="detail-value"><span class="booking-id">${booking._id.slice(-8).toUpperCase()}</span></span>
                                     </div>
                                 </div>
                                 
-                                <p><strong>Important:</strong> Please arrive at least 15 minutes before showtime. Present this email or your booking ID at the counter.</p>
-                                
-                                <div style="text-align: center;">
-                                    <a href="${process.env.FRONTEND_URL}/my-bookings" class="button">View My Bookings</a>
+                                <div class="amount-section">
+                                    <span class="amount-label">Total Amount</span>
+                                    <span class="amount-value">₹${amount}</span>
                                 </div>
                             </div>
                             
-                            <div class="footer">
-                                <p>© ${new Date().getFullYear()} CineBook. All rights reserved.</p>
-                                <p>For any queries, contact us at support@cinebook.com</p>
-                                <p style="margin-top: 12px; font-size: 11px;">This is a system generated email, please do not reply.</p>
+                            <div class="info-box">
+                                <p><span class="info-icon">🎯</span> <strong>Important Reminders:</strong></p>
+                                <p>• Please arrive at least 15 minutes before showtime</p>
+                                <p>• Carry a valid government ID proof for verification</p>
+                                <p>• Show this email or your booking ID at the ticket counter</p>
+                                <p>• Outside food and beverages are not permitted</p>
+                            </div>
+                            
+                            <div class="wishes">
+                                <h3>🎉 Enjoy Your Movie!</h3>
+                                <p>We hope you have a wonderful cinematic experience.<br>For any assistance, reach out to us at <strong style="color: #8b5cf6;">support@cinebook.com</strong></p>
+                            </div>
+                        </div>
+                        
+                        <div class="footer">
+                            <div class="brand">🎬 CineBook</div>
+                            <div class="tagline">Experience Cinema, Redefined</div>
+                            <hr>
+                            <div class="copyright">
+                                © ${new Date().getFullYear()} CineBook Entertainment. All rights reserved.<br>
+                                This is a system-generated confirmation email. Please do not reply.
                             </div>
                         </div>
                     </div>
@@ -449,33 +626,47 @@ const sendBookingConfirmationEmail = inngest.createFunction(
                 </html>
             `;
             
-            // Plain text version as fallback
+            // Plain text version
             const plainText = `
-Booking Confirmation - ${movie?.title}
+╔══════════════════════════════════════════════════════╗
+║                    ✨ BOOKING CONFIRMED ✨               ║
+╚══════════════════════════════════════════════════════╝
 
-Hi ${user?.name || 'Movie Lover'},
+Dear ${user?.name || 'Movie Enthusiast'},
 
-Thank you for booking with CineBook! Your payment has been successfully processed.
+Thank you for choosing CineBook! Your booking has been successfully confirmed.
 
-Booking Details:
-- Movie: ${movie?.title}
-- Date: ${formattedDate}
-- Time: ${formattedTime}
-- Seats: ${seats}
-- Booking ID: ${booking._id}
-- Total Amount: ₹${amount}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Please arrive at least 15 minutes before showtime.
+🎬 MOVIE: ${movie?.title}
+📅 DATE: ${formattedDate}
+⏰ TIME: ${formattedTime}
+💺 SEATS: ${seats}
+🎟️ BOOKING ID: ${booking._id.slice(-8).toUpperCase()}
+💰 AMOUNT: ₹${amount}
 
-View your bookings: ${process.env.FRONTEND_URL}/my-bookings
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-© ${new Date().getFullYear()} CineBook
+📌 IMPORTANT REMINDERS:
+• Arrive 15 minutes before showtime
+• Carry a valid government ID proof
+• Show this email at the ticket counter
+• Outside food not permitted
+
+🎉 Enjoy Your Movie!
+
+For assistance: support@cinebook.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎬 CineBook - Experience Cinema, Redefined
+© ${new Date().getFullYear()} CineBook Entertainment
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
             `;
             
             // Send email
             await sendEmail({
                 to: user?.email,
-                subject: `🎬 Booking Confirmed! ${movie?.title} tickets booked`,
+                subject: `✨ Booking Confirmed! ${movie?.title} | CineBook`,
                 html: emailHtml,
                 text: plainText
             });
