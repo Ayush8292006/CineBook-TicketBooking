@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import Booking from "../models/Booking.js";
+import { inngest } from "../inngest/index.js";
 
 export const stripeWebhook = async (req, res) => {
   const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -14,6 +15,7 @@ export const stripeWebhook = async (req, res) => {
       sig, 
       process.env.STRIPE_WEBHOOK_SECRET
     );
+    console.log(`✅ Webhook received: ${event.type}`);
   } catch (error) {
     console.log(`⚠️ Webhook signature verification failed:`, error.message);
     return res.status(400).send(`Webhook Error: ${error.message}`);
@@ -28,11 +30,24 @@ export const stripeWebhook = async (req, res) => {
         
         if (bookingId) {
           // Update booking to paid
-          await Booking.findByIdAndUpdate(bookingId, { 
-            isPaid: true,
-            paymentLink: session.url
-          });
+          const booking = await Booking.findByIdAndUpdate(
+            bookingId, 
+            { 
+              isPaid: true,
+              paymentLink: session.url
+            },
+            { new: true }
+          );
           console.log(`✅ Booking ${bookingId} marked as paid`);
+          
+          // Send confirmation email
+          if (booking) {
+            await inngest.send({
+              name: "app/show.booked",
+              data: { bookingId: booking._id }
+            });
+            console.log(`📧 Email trigger sent for booking ${bookingId}`);
+          }
         }
         break;
       }
@@ -50,11 +65,24 @@ export const stripeWebhook = async (req, res) => {
         const bookingId = session?.metadata?.bookingId;
         
         if (bookingId) {
-          await Booking.findByIdAndUpdate(bookingId, { 
-            isPaid: true,
-            paymentLink: session.url
-          });
+          const booking = await Booking.findByIdAndUpdate(
+            bookingId, 
+            { 
+              isPaid: true,
+              paymentLink: session.url
+            },
+            { new: true }
+          );
           console.log(`✅ Booking ${bookingId} marked as paid via payment_intent`);
+          
+          // Send confirmation email
+          if (booking) {
+            await inngest.send({
+              name: "app/show.booked",
+              data: { bookingId: booking._id }
+            });
+            console.log(`📧 Email trigger sent for booking ${bookingId}`);
+          }
         }
         break;
       }
@@ -66,7 +94,7 @@ export const stripeWebhook = async (req, res) => {
     res.json({ received: true });
     
   } catch (error) {
-    console.error(" Stripe Webhook Error:", error.message);
+    console.error("❌ Stripe Webhook Error:", error.message);
     return res.status(500).send("Internal Server Error");
   }
 };
