@@ -22,7 +22,7 @@ const sendEmail = async ({ to, subject, html, text }) => {
         console.log(`✅ Email sent to ${to}`);
         return response;
     } catch (error) {
-        console.error("❌ Email error:", error);
+        console.error(" Email error:", error);
         throw error;
     }
 };

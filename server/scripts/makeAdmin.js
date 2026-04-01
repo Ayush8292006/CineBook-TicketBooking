@@ -5,28 +5,27 @@ import User from '../models/User.js';
 const makeAdmin = async (userId) => {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log("✅ Database connected");
+    console.log("✅ Connected to database");
     
-    // ✅ Use findOneAndUpdate with proper options
     const user = await User.findOneAndUpdate(
       { _id: userId },
       { $set: { isAdmin: true } },
-      { new: true, upsert: true }  // upsert: create if doesn't exist
+      { new: true, upsert: true }
     );
     
-    console.log(`✅ User ${userId} is now admin`);
-    console.log("User details:", user);
+    console.log(`✅ Admin privileges granted to ${userId}`);
+    console.log("User:", user);
     process.exit(0);
   } catch (error) {
-    console.error("Error:", error);
+    console.error(" Failed to update user:", error.message);
     process.exit(1);
   }
 };
 
 const userId = process.argv[2];
 if (!userId) {
-  console.log("Usage: node makeAdmin.js <userId>");
-  console.log("Example: node makeAdmin.js user_3Bg914cgE4EfKcOFyR1AZ3cQ9sK");
+  console.log("Usage: npm run make-admin <user-id>");
+  console.log("Example: npm run make-admin user_123abc");
   process.exit(1);
 }
 

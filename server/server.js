@@ -15,149 +15,143 @@ import { stripeWebhook } from './controllers/stripeWebhooks.js';
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Database connection
+// Connect to MongoDB
 await connectDB();
 
-// ==================== STRIPE WEBHOOK ====================
-// Must be BEFORE express.json() for raw body
+// Stripe webhook needs raw body - must come before express.json()
 app.use('/api/stripe-webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
-// ==================== CORS ====================
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [process.env.FRONTEND_URL, 'https://cinebook.vercel.app']  // Production URLs
-  : ['http://localhost:5173', 'http://localhost:5000'];        // Development URLs
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
 
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    
+    // Allow all in development
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`CORS blocked: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  optionsSuccessStatus: 200
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
-app.use(cors(corsOptions));
 
-// ==================== MIDDLEWARE ====================
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Debug middleware (remove in production or keep for logging)
+// Request logger
 app.use((req, res, next) => {
-  if (process.env.NODE_ENV !== 'production') {
-    console.log("📢", req.method, req.url);
-  }
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`);
+    }
+  });
   next();
 });
 
 // Clerk authentication
 app.use(clerkMiddleware());
 
-// Auth debug (remove in production)
+// Attach userId to request for convenience
 app.use((req, res, next) => {
-  if (process.env.NODE_ENV !== 'production') {
-    const auth = getAuth(req);
-    console.log("🔍 Auth userId:", auth?.userId || "No user");
-  }
+  const auth = getAuth(req);
+  req.userId = auth?.userId;
   next();
 });
 
-// ==================== DEBUG ROUTES (Development Only) ====================
+// Development helpers
 if (process.env.NODE_ENV !== 'production') {
   app.get('/debug/auth', (req, res) => {
-    const auth = getAuth(req);
-    res.json({
-      hasAuth: !!auth?.userId,
-      userId: auth?.userId,
-      sessionId: auth?.sessionId,
-      headers: req.headers.authorization?.substring(0, 50) || "No auth header"
-    });
+    res.json({ userId: req.userId });
   });
 
   app.get('/debug/users', async (req, res) => {
-    try {
-      const users = await User.find({});
-      res.json({
-        total: users.length,
-        users: users.map(u => ({
-          id: u._id,
-          email: u.email,
-          name: u.name,
-          isAdmin: u.isAdmin
-        }))
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
+    const users = await User.find({}).select('-__v');
+    res.json(users);
   });
 
   app.post('/debug/make-admin', async (req, res) => {
-    try {
-      const { userId, email, name } = req.body;
-      
-      if (!userId) {
-        return res.status(400).json({ error: "userId required" });
-      }
-      
-      let user = await User.findOne({ _id: userId });
-      
-      if (!user) {
-        user = new User({
-          _id: userId,
-          name: name || "Admin User",
-          email: email || "admin@example.com",
-          image: "",
-          isAdmin: true
-        });
-        await user.save();
-        res.json({ success: true, message: "User created as admin", user });
-      } else {
-        user.isAdmin = true;
-        await user.save();
-        res.json({ success: true, message: "User updated to admin", user });
-      }
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    const { userId, email, name } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
     }
+    
+    let user = await User.findOne({ _id: userId });
+    
+    if (!user) {
+      user = new User({
+        _id: userId,
+        name: name || 'Admin User',
+        email: email || 'admin@cinebook.com',
+        isAdmin: true
+      });
+      await user.save();
+      return res.json({ message: 'Admin user created', user });
+    }
+    
+    user.isAdmin = true;
+    await user.save();
+    res.json({ message: 'User is now admin', user });
   });
 }
 
-// ==================== API ROUTES ====================
+// API Routes
 app.use('/api/inngest', serve({ client: inngest, functions }));
 app.use('/api/admin', adminRouter);
 app.use('/api/show', showRouter);
 app.use('/api/booking', bookingRouter);
 app.use('/api/user', userRouter);
 
-// ==================== HEALTH CHECK ====================
+// Health check
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    env: process.env.NODE_ENV
   });
 });
 
-// ==================== HOME ROUTE ====================
-app.get('/', (req, res) => res.send('Server is Live'));
+app.get('/', (req, res) => {
+  res.json({ message: 'CineBook API is running' });
+});
 
-// ==================== 404 HANDLER ====================
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ 
     success: false, 
-    message: `Route not found: ${req.method} ${req.url}` 
+    message: `Cannot ${req.method} ${req.url}` 
   });
 });
 
-// ==================== ERROR HANDLER ====================
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('Server Error:', err);
-  res.status(500).json({ 
-    success: false, 
-    message: 'Internal Server Error',
+  console.error('Error:', err);
+  
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong',
     ...(process.env.NODE_ENV !== 'production' && { error: err.message })
   });
 });
 
-// ==================== START SERVER ====================
+// Start server
 app.listen(port, () => {
-  console.log(`✅ Server listening at http://localhost:${port}`);
-  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Server running on port ${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

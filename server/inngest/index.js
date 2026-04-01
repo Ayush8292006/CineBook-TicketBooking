@@ -86,7 +86,7 @@ const syncUserCreation = inngest.createFunction(
                 image: image
             });
             
-            console.log("✅ User created:", newUser);
+            console.log(" User created:", newUser);
             return { 
                 success: true, 
                 message: "User created successfully",
@@ -117,7 +117,7 @@ const syncUserDeletion = inngest.createFunction(
                 return { success: false, message: "User not found" };
             }
             
-            console.log(`✅ User deleted: ${id}`);
+            console.log(` User deleted: ${id}`);
             return { success: true, message: "User deleted successfully", userId: id };
         } catch (error) {
             console.error("Error deleting user:", error);
@@ -155,7 +155,7 @@ const syncUserUpdation = inngest.createFunction(
                 return { success: false, message: "User not found" };
             }
             
-            console.log("✅ User updated:", updatedUser);
+            console.log(" User updated:", updatedUser);
             return { 
                 success: true, 
                 message: "User updated successfully",
@@ -168,11 +168,11 @@ const syncUserUpdation = inngest.createFunction(
     }
 );
 
-// ✅ FIXED: Release seats and delete booking after 10 minutes if not paid
+//  Release seats and delete booking after 10 minutes if not paid
 const releaseSeatAndDeleteBooking = inngest.createFunction(
     { 
         id: 'release-seats-delete-booking',
-        triggers: [{ event: 'app/checkpayment' }]  // ✅ Fixed syntax
+        triggers: [{ event: 'app/checkpayment' }]  
     },
     async ({ event, step }) => {
         try {
@@ -180,10 +180,10 @@ const releaseSeatAndDeleteBooking = inngest.createFunction(
             console.log(`⏰ Starting timer for booking: ${bookingId}`);
             
             // Wait for 10 minutes
-            const tenMinutesLater = new Date(Date.now() + 1 * 60 * 1000);
-            await step.sleepUntil('wait-for-10-minutes', tenMinutesLater);
+            const threeMinutesLater = new Date(Date.now() + 3 * 60 * 1000);
+            await step.sleepUntil('wait-for-3-minutes', threeMinutesLater);
             
-            console.log(`⏰ 10 minutes passed for booking: ${bookingId}`);
+            console.log(` 3 minutes passed for booking: ${bookingId}`);
             
             // Check payment status
             await step.run('check-payment-status', async () => {
@@ -206,21 +206,21 @@ const releaseSeatAndDeleteBooking = inngest.createFunction(
                         });
                         show.markModified('occupiedSeats');
                         await show.save();
-                        console.log(`✅ Seats released for show ${show._id}`);
+                        console.log(` Seats released for show ${show._id}`);
                     }
                     
                     // Delete booking
                     await Booking.findByIdAndDelete(booking._id);
-                    console.log(`✅ Booking ${bookingId} deleted`);
+                    console.log(` Booking ${bookingId} deleted`);
                 } else {
-                    console.log(`✅ Payment made for booking ${bookingId}, keeping seats`);
+                    console.log(` Payment made for booking ${bookingId}, keeping seats`);
                 }
             });
             
             return { success: true, message: "Booking processed" };
             
         } catch (error) {
-            console.error("❌ Error in releaseSeatAndDeleteBooking:", error);
+            console.error(" Error in releaseSeatAndDeleteBooking:", error);
             return { success: false, error: error.message };
         }
     }
@@ -228,7 +228,7 @@ const releaseSeatAndDeleteBooking = inngest.createFunction(
 
 // inngest function to send email when user books a show
 
-// ✅ PROFESSIONAL EMAIL FUNCTION with HTML Styling
+
 const sendBookingConfirmationEmail = inngest.createFunction(
     { 
         id: 'send-booking-confirmation-email',
@@ -478,7 +478,7 @@ View your bookings: ${process.env.FRONTEND_URL}/my-bookings
                 text: plainText
             });
             
-            console.log(`✅ Booking confirmation email sent to ${user?.email}`);
+            console.log(`Booking confirmation email sent to ${user?.email}`);
             return { 
                 success: true, 
                 message: "Email sent successfully",
@@ -487,7 +487,7 @@ View your bookings: ${process.env.FRONTEND_URL}/my-bookings
             };
             
         } catch (error) {
-            console.error("❌ Error sending email:", error);
+            console.error(" Error sending email:", error);
             return { success: false, error: error.message };
         }
     }

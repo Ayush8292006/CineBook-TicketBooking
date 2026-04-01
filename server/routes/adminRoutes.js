@@ -6,12 +6,12 @@ import User from '../models/User.js';  // ✅ Add this import
 
 const adminRouter = express.Router();
 
-// ✅ TEST ROUTE - Public (no auth)
+//  TEST ROUTE - Public (no auth)
 adminRouter.get('/test', (req, res) => {
   res.json({ message: "✅ Admin router is working!", timestamp: new Date() });
 });
 
-// ✅ PUBLIC ADMIN CHECK - No auth required for testing
+
 adminRouter.get('/public-is-admin', async (req, res) => {
   try {
     // Get user ID from query or use your user ID
@@ -34,6 +34,6 @@ adminRouter.get('/dashboard', getDashboardData);
 adminRouter.get('/all-shows', getAllShows);
 adminRouter.get('/all-bookings', getAllBookings);
 
-console.log("✅✅✅ Admin routes LOADED");
+console.log(" Admin routes LOADED");
 
 export default adminRouter;

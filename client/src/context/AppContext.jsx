@@ -110,6 +110,7 @@ const fetchFavoriteMovies = async () => {
     image_base_url,
     getToken,
     axios,
+    fetchFavoriteMovies, 
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

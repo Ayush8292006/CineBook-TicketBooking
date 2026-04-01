@@ -62,10 +62,10 @@ export const updateFavorite = async (req, res) => {
     if (!favorites.includes(movieId)) {
       favorites.push(movieId);
       isAdding = true;
-      console.log("✅ Added to favorites");
+      console.log(" Added to favorites");
     } else {
       favorites = favorites.filter(item => item !== movieId);
-      console.log("✅ Removed from favorites");
+      console.log(" Removed from favorites");
     }
 
     await clerkClient.users.updateUser(userId, {

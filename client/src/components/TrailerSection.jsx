@@ -1,105 +1,189 @@
 import React, { useState } from 'react'
-import { dummyTrailers } from '../assets/assets'
-import BlurCircle from './BlurCircle'
 import { Play, Film, Info } from 'lucide-react'
+
+// 🎬 Updated trailer data with high-quality movie trailers (like TMDb style)
+const dummyTrailers = [
+  {
+    id: 1,
+    title: "Dune: Part Two",
+    videoUrl: "https://www.youtube.com/watch?v=Way9Dexny3w",
+    image: "https://image.tmdb.org/t/p/w780/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg",
+    year: "2024",
+    duration: "2:46",
+    quality: "4K"
+  },
+  {
+    id: 2,
+    title: "Oppenheimer",
+    videoUrl: "https://www.youtube.com/watch?v=bK6ldnjE3Y0",
+    image: "https://image.tmdb.org/t/p/w780/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+    year: "2023",
+    duration: "3:00",
+    quality: "4K"
+  },
+  {
+    id: 3,
+    title: "John Wick: Chapter 4",
+    videoUrl: "https://www.youtube.com/watch?v=qEVUtrk8_B4",
+    image: "https://image.tmdb.org/t/p/w780/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg",
+    year: "2023",
+    duration: "2:30",
+    quality: "4K"
+  },
+  {
+    id: 4,
+    title: "Spider-Man: Across the Spider-Verse",
+    videoUrl: "https://www.youtube.com/watch?v=cqGjhVJWtEg",
+    image: "https://image.tmdb.org/t/p/w780/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg",
+    year: "2023",
+    duration: "2:23",
+    quality: "4K"
+  },
+  {
+    id: 5,
+    title: "The Batman",
+    videoUrl: "https://www.youtube.com/watch?v=mqqft2x_Aa4",
+    image: "https://image.tmdb.org/t/p/w780/74xTEgt7R36Fpooo50r9T25onhq.jpg",
+    year: "2022",
+    duration: "2:55",
+    quality: "4K"
+  }
+]
 
 const TrailerSection = () => {
   const [currentTrailer, setCurrentTrailer] = useState(dummyTrailers[0])
 
-  return (
-    <div className='relative px-6 md:px-16 lg:px-24 xl:px-44 py-24 overflow-hidden bg-[#020202]'>
-      
-      {/* 🌌 Cinematic Glow Backgrounds */}
-      <BlurCircle top='-10%' left='10%' color="bg-primary" opacity="opacity-5" />
-      <BlurCircle bottom='20%' right='-5%' color="bg-primary" opacity="opacity-10" />
+  // Function to convert YouTube URL to embed URL
+  const getEmbedUrl = (url) => {
+    if (url.includes("watch?v=")) {
+      return url.replace("watch?v=", "embed/")
+    } else if (url.includes("youtu.be/")) {
+      const videoId = url.split("youtu.be/")[1]
+      return `https://www.youtube.com/embed/${videoId}`
+    }
+    return url
+  }
 
-      {/* Header with Visual Hierarchy */}
-      <div className='flex flex-col items-center mb-16 space-y-3'>
-        <div className='flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.5em]'>
-           <Film className='w-3 h-3' /> Behind the Scenes
+  return (
+    <div className="relative px-4 sm:px-8 md:px-16 lg:px-24 xl:px-32 py-16 sm:py-24 bg-[#020202] overflow-hidden">
+
+      {/* 🌌 Animated Background Glow */}
+      <div className="absolute w-[400px] h-[400px] bg-primary/20 blur-[120px] rounded-full top-[-100px] left-[-100px] animate-pulse" />
+      <div className="absolute w-[300px] h-[300px] bg-primary/10 blur-[100px] rounded-full bottom-[-80px] right-[-80px] animate-pulse" />
+
+      {/* 🎬 Header */}
+      <div className="flex flex-col items-center mb-12 sm:mb-16 text-center">
+        <div className="flex items-center gap-2 text-primary text-xs tracking-[0.4em] uppercase font-bold">
+          <Film className="w-4 h-4" />
+          Behind the Scenes
         </div>
-        <h2 className='text-3xl md:text-5xl font-black uppercase tracking-tighter italic text-white/90'>
-          Official <span className='text-primary/80'>Trailers</span>
+
+        <h2 className="text-2xl sm:text-4xl md:text-5xl font-black italic text-white mt-3">
+          Official <span className="text-primary">Trailers</span>
         </h2>
-        <div className='w-24 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent rounded-full' />
+
+        <div className="w-20 sm:w-28 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent mt-4" />
       </div>
 
-      <div className='relative max-w-7xl mx-auto'>
-        <div className='grid grid-cols-1 lg:grid-cols-12 gap-10 items-start'>
-          
-          {/* 🎬 Main Player Area (8 Columns) */}
-          <div className='lg:col-span-8 group'>
-            <div className='relative aspect-video rounded-[2.5rem] overflow-hidden shadow-[0_0_80px_rgba(0,0,0,0.9)] border border-white/5 bg-black'>
-              {/* Subtle hover glow behind player */}
-              <div className='absolute -inset-2 bg-primary/20 blur-3xl opacity-0 group-hover:opacity-40 transition-opacity duration-700' />
-              
-              <iframe
-                className='w-full h-full relative z-10'
-                src={currentTrailer?.videoUrl.replace("watch?v=", "embed/") + "?rel=0&autoplay=0&modestbranding=1"}
-                title="Cinematic Trailer"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
+      {/* 🎥 Main Layout */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
 
-            {/* Trailer Info Overlay (Below Player) */}
-            <div className='mt-6 px-4 flex justify-between items-center'>
-                <div>
-                    <h3 className='text-xl font-black uppercase italic tracking-wider text-white/90'>{currentTrailer?.image || "Now Playing"}</h3>
-                    <p className='text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1 flex items-center gap-2'>
-                        <Info className='w-3 h-3 text-primary' /> 4K Ultra HD • Official Premiere
-                    </p>
-                </div>
-            </div>
+        {/* 🎬 Video Player */}
+        <div className="lg:col-span-8 group">
+          <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-black">
+
+            {/* Glow on hover */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700 bg-primary/10 blur-2xl" />
+
+            <iframe
+              className="w-full h-[220px] sm:h-[300px] md:h-[400px] lg:h-[450px] relative z-10"
+              src={getEmbedUrl(currentTrailer?.videoUrl)}
+              title={currentTrailer?.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
           </div>
 
-          {/* 🎞️ Thumbnail Sidebar (4 Columns) */}
-          <div className='lg:col-span-4 flex flex-col gap-4'>
-            <p className='text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 mb-2 ml-1'>Up Next in Queue</p>
-            
-            <div className='flex lg:flex-col gap-4 overflow-x-auto lg:overflow-y-auto lg:max-h-[500px] pb-4 lg:pb-0 pr-2 custom-scrollbar'>
-              {dummyTrailers.map((trailer, index) => (
-                <div
-                  key={index}
-                  className={`group relative flex-shrink-0 lg:flex-shrink flex items-center gap-4 p-3 rounded-2xl transition-all duration-500 cursor-pointer border ${
-                    currentTrailer.videoUrl === trailer.videoUrl
-                      ? 'bg-white/[0.05] border-primary/40 shadow-lg'
-                      : 'bg-transparent border-transparent hover:bg-white/[0.03] hover:border-white/10'
-                  }`}
-                  onClick={() => setCurrentTrailer(trailer)}
-                >
-                  {/* Small Thumbnail */}
-                  <div className='relative w-32 h-20 md:w-40 md:h-24 lg:w-24 lg:h-16 rounded-xl overflow-hidden shrink-0'>
-                    <img
-                      src={trailer.image}
-                      alt=''
-                      className={`w-full h-full object-cover transition-all duration-700 ${
-                        currentTrailer.videoUrl === trailer.videoUrl ? 'scale-110 grayscale-0' : 'grayscale-[60%] group-hover:grayscale-0'
-                      }`}
-                    />
-                    <div className='absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all' />
-                    {currentTrailer.videoUrl === trailer.videoUrl && (
-                        <div className='absolute inset-0 flex items-center justify-center bg-primary/20'>
-                            <Play className='w-5 h-5 text-black fill-black' />
-                        </div>
-                    )}
-                  </div>
-
-                  {/* Thumbnail Text (Hidden on small mobile scroll, visible on LG) */}
-                  <div className='hidden lg:block overflow-hidden'>
-                    <p className={`text-[10px] font-black uppercase tracking-widest truncate ${
-                        currentTrailer.videoUrl === trailer.videoUrl ? 'text-primary' : 'text-gray-400'
-                    }`}>
-                        {trailer.image || `Trailer #${index + 1}`}
-                    </p>
-                    <p className='text-[9px] font-bold text-gray-600 uppercase mt-1'>Official Clip</p>
-                  </div>
-                </div>
-              ))}
+          {/* 🎬 Info */}
+          <div className="mt-5 flex justify-between items-center px-2">
+            <div>
+              <h3 className="text-lg sm:text-xl font-bold text-white">
+                {currentTrailer?.title || "Now Playing"}
+              </h3>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-xs text-gray-400">
+                  {currentTrailer?.year}
+                </p>
+                <p className="text-xs text-gray-400 flex items-center gap-1">
+                  <Info className="w-3 h-3 text-primary" />
+                  {currentTrailer?.quality} Ultra HD • {currentTrailer?.duration}
+                </p>
+              </div>
             </div>
           </div>
-
         </div>
+
+        {/* 🎞️ Sidebar */}
+        <div className="lg:col-span-4">
+
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">
+            Up Next • {dummyTrailers.length} Trailers
+          </p>
+
+          <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-y-auto max-h-[450px] pr-2 scrollbar-hide">
+
+            {dummyTrailers.map((trailer) => (
+              <div
+                key={trailer.id}
+                onClick={() => setCurrentTrailer(trailer)}
+                className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-all duration-300 border 
+                ${
+                  currentTrailer.id === trailer.id
+                    ? "bg-primary/20 border-primary scale-[1.02]"
+                    : "hover:bg-white/5 border-transparent"
+                }`}
+              >
+                {/* Thumbnail */}
+                <div className="relative w-28 h-16 sm:w-32 sm:h-20 rounded-lg overflow-hidden flex-shrink-0">
+
+                  <img
+                    src={trailer.image}
+                    alt={trailer.title}
+                    className={`w-full h-full object-cover transition duration-500
+                    ${
+                      currentTrailer.id === trailer.id
+                        ? "scale-110"
+                        : "group-hover:scale-105 opacity-70 hover:opacity-100"
+                    }`}
+                  />
+
+                  {/* Play overlay */}
+                  {currentTrailer.id === trailer.id && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                      <Play className="text-white w-5 h-5" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Text */}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-semibold truncate
+                  ${
+                    currentTrailer.id === trailer.id
+                      ? "text-primary"
+                      : "text-gray-400"
+                  }`}>
+                    {trailer.title}
+                  </p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    {trailer.year} • {trailer.duration}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   )

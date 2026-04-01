@@ -4,7 +4,7 @@ import {
   getOccupiedSeats
 } from "../controllers/bookingController.js";
 import { requireAuth } from "@clerk/express";
-import Booking from "../models/Booking.js"; // ✅ Add this import
+import Booking from "../models/Booking.js"; 
 
 const bookingRouter = express.Router();
 
@@ -13,7 +13,7 @@ bookingRouter.get('/test', (req, res) => {
   res.json({ success: true, message: "Booking router is working!" });
 });
 
-// ✅ FIXED: Call req.auth() as function
+
 bookingRouter.get('/check-auth', requireAuth(), (req, res) => {
   const auth = req.auth();  // Call as function!
   console.log("🔍 Check-auth - auth():", auth);
@@ -24,7 +24,7 @@ bookingRouter.get('/check-auth', requireAuth(), (req, res) => {
   });
 });
 
-// ✅ ADD THIS ROUTE - Manual update booking
+
 bookingRouter.post("/update/:bookingId", requireAuth(), async (req, res) => {
     try {
         const { bookingId } = req.params;
@@ -53,6 +53,6 @@ bookingRouter.post("/update/:bookingId", requireAuth(), async (req, res) => {
 bookingRouter.post("/create", requireAuth(), createBooking);
 bookingRouter.get("/seats/:showId", requireAuth(), getOccupiedSeats);
 
-console.log("✅ bookingRoutes loaded");
+console.log(" bookingRoutes loaded");
 
 export default bookingRouter;

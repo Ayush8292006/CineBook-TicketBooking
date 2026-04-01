@@ -73,7 +73,7 @@ export const stripeWebhook = async (req, res) => {
             },
             { new: true }
           );
-          console.log(`✅ Booking ${bookingId} marked as paid via payment_intent`);
+          console.log(` Booking ${bookingId} marked as paid via payment_intent`);
           
           // Send confirmation email
           if (booking) {
@@ -94,7 +94,7 @@ export const stripeWebhook = async (req, res) => {
     res.json({ received: true });
     
   } catch (error) {
-    console.error("❌ Stripe Webhook Error:", error.message);
+    console.error(" Stripe Webhook Error:", error.message);
     return res.status(500).send("Internal Server Error");
   }
 };

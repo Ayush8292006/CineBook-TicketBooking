@@ -85,7 +85,7 @@ export const createBooking = async (req, res) => {
     
     const amount = totalPrice || (showData.showPrice * seatArray.length);
     
-    // ✅ Create booking FIRST
+    //  Create booking FIRST
     const booking = await Booking.create({
       user: userId,
       show: showId,
@@ -94,9 +94,9 @@ export const createBooking = async (req, res) => {
       isPaid: false  // Set to false until payment is completed
     });
     
-    console.log("✅ Booking created:", booking._id);
+    console.log(" Booking created:", booking._id);
     
-    // ✅ Update occupied seats
+    //  Update occupied seats
     seatArray.forEach(seat => {
       showData.occupiedSeats[seat] = userId;
     });
@@ -104,9 +104,9 @@ export const createBooking = async (req, res) => {
     showData.markModified('occupiedSeats');
     await showData.save();
     
-    console.log("✅ Show updated with occupied seats");
+    console.log(" Show updated with occupied seats");
     
-    // ✅ STRIPE PAYMENT GATEWAY
+    //  STRIPE PAYMENT GATEWAY
     const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
     
     // Get origin from headers
@@ -120,12 +120,12 @@ export const createBooking = async (req, res) => {
           name: showData.movie.title,
           description: `Seats: ${seatArray.join(", ")} | Show: ${new Date(showData.showDateTime).toLocaleString()}`,
         },
-        unit_amount: Math.floor(amount) * 100  // ✅ Convert to cents
+        unit_amount: Math.floor(amount) * 100  
       },
       quantity: 1,
     }];
 
-    console.log("✅ Creating Stripe session with:");
+    console.log(" Creating Stripe session with:");
 console.log("   Success URL:", `${origin}/my-bookings?success=true&bookingId=${booking._id}`);
 console.log("   Cancel URL:", `${origin}/my-bookings?canceled=true`);
     
@@ -148,7 +148,7 @@ console.log("   Cancel URL:", `${origin}/my-bookings?canceled=true`);
     booking.paymentLink = session.url;
     await booking.save();
     
-    console.log("✅ Stripe session created:", session.id);
+    console.log(" Stripe session created:", session.id);
     console.log("=" .repeat(50));
 
     // run inngest shedular function to release seats if not paid in 10 minutes

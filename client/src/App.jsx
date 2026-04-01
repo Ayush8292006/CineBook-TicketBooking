@@ -6,11 +6,13 @@ import MovieDetails from './pages/MovieDetails'
 import SeatLayout from './pages/SeatLayout'
 import MyBookings from './pages/MyBookings'
 import Favorite from './pages/Favorite'
+
 import { Toaster } from 'react-hot-toast'
 import AboutUs from './pages/AboutUs'
 import Legal from './pages/Legal'
 import Footer from './components/Footer'
 import Navbar from './components/Navbar'
+
 import Layout from './pages/admin/Layout'
 import Dashboard from './pages/admin/Dashboard'
 import AddShows from './pages/admin/AddShows'
@@ -20,7 +22,6 @@ import { SignIn } from '@clerk/react'
 import { useAppContext } from './context/AppContext'
 import Loading from './components/Loading'
 
-
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith('/admin')
   const { user } = useAppContext()
@@ -29,6 +30,7 @@ const App = () => {
     <>
       <Toaster />
       {!isAdminRoute && <Navbar />}
+   
 
       <Routes>
         <Route path='/' element={<Home />} />
@@ -37,7 +39,9 @@ const App = () => {
         <Route path='/movies/:id/:date' element={<SeatLayout />} />
         <Route path='/my-bookings' element={<MyBookings />} />
         <Route path='/loading/:nextUrl' element={<Loading />} />
+      
         <Route path='/favorites' element={<Favorite />} />
+
         <Route path='/about' element={<AboutUs />} />
         <Route path='/legal' element={<Legal />} />
 

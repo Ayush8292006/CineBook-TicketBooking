@@ -1,12 +1,12 @@
 import { getAuth } from "@clerk/express";
-import User from '../models/User.js'; // ✅ YEH IMPORT ADD KARO
+import User from '../models/User.js'; 
 
 export const protectAdmin = async (req, res, next) => {
   try {
     const { userId } = getAuth(req);
 
     if (!userId) {
-      console.log("❌ No userId found in request");
+      console.log(" No userId found in request");
       return res.status(401).json({ 
         success: false, 
         message: "Unauthorized - Please log in" 
@@ -17,7 +17,7 @@ export const protectAdmin = async (req, res, next) => {
     const user = await User.findOne({ _id: userId });
     
     if (!user || !user.isAdmin) {
-      console.log("❌ User is not admin:", userId);
+      console.log(" User is not admin:", userId);
       return res.status(403).json({ 
         success: false, 
         message: "Access Denied: Admin role required" 
