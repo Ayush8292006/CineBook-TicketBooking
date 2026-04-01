@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { assets } from '../assets/assets'
-import { MenuIcon, TicketPlus, XIcon, Home, Heart, Calendar } from 'lucide-react'
+import { MenuIcon, TicketPlus, XIcon, Home, Heart, User, LogOut, Sparkles } from 'lucide-react'
 import { useClerk, UserButton, useUser } from '@clerk/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import VoiceAssistant from './VoiceAssistant'
@@ -10,7 +10,7 @@ const Navbar = () => {
     const [isOpen, setIsopen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
     const { user } = useUser()
-    const { openSignIn } = useClerk()
+    const { openSignIn, signOut } = useClerk()
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -38,6 +38,12 @@ const Navbar = () => {
         if (path === '/' && location.pathname === '/') return true
         if (path !== '/' && location.pathname.startsWith(path)) return true
         return false
+    }
+
+    const handleSignOut = async () => {
+        await signOut()
+        setIsopen(false)
+        navigate('/')
     }
 
     return (
@@ -94,9 +100,8 @@ const Navbar = () => {
                         })}
                     </div>
 
-                    {/* Desktop Right Section - All items aligned to far right */}
+                    {/* Desktop Right Section */}
                     <div className='hidden md:flex items-center gap-4'>
-                        {/* Auth Section */}
                         {!user ? (
                             <motion.button 
                                 whileHover={{ scale: 1.05 }}
@@ -124,17 +129,39 @@ const Navbar = () => {
                             </div>
                         )}
                         
-                        {/* Voice Assistant - Positioned at far right */}
+                        {/* Voice Assistant */}
                         <div className="ml-2">
                             <VoiceAssistant isNavbar={true} />
                         </div>
                     </div>
 
-                    {/* Mobile Menu Button */}
+                    {/* Mobile Section */}
                     <div className='flex items-center gap-3 md:hidden'>
                         {/* Voice Assistant for Mobile */}
                         <VoiceAssistant isNavbar={true} />
                         
+                        {/* Clerk UserButton for Mobile */}
+                        {user ? (
+                            <UserButton afterSignOutUrl="/">
+                                <UserButton.MenuItems>
+                                    <UserButton.Action 
+                                        label="My Bookings" 
+                                        labelIcon={<TicketPlus size={18} />} 
+                                        onClick={() => navigate('/my-bookings')}
+                                    />
+                                </UserButton.MenuItems>
+                            </UserButton>
+                        ) : (
+                            <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => openSignIn()}
+                                className='px-3 py-1.5 bg-gradient-to-r from-primary to-primary-dull rounded-full font-medium text-black text-xs'
+                            >
+                                Sign In
+                            </motion.button>
+                        )}
+                        
+                        {/* Menu Button */}
                         <motion.button 
                             whileTap={{ scale: 0.95 }}
                             className='relative w-10 h-10 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all duration-300'
@@ -161,7 +188,7 @@ const Navbar = () => {
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 50, opacity: 0 }}
                             transition={{ duration: 0.3 }}
-                            className='flex flex-col items-center justify-center min-h-screen'
+                            className='flex flex-col min-h-screen pt-32 px-6'
                             onClick={(e) => e.stopPropagation()}
                         >
                             {/* Close Button */}
@@ -179,8 +206,41 @@ const Navbar = () => {
                                 <img src={assets.logo} alt="CineBook" className='w-28 h-auto' />
                             </div>
 
+                            {/* User Info Section - Attractive Styling */}
+                            {user && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                    className='mb-12 pb-8 border-b border-white/15'
+                                >
+                                    <div className='flex items-center gap-3 mb-3'>
+                                        <div className='w-12 h-12 rounded-full bg-gradient-to-r from-primary to-primary-dull flex items-center justify-center shadow-lg'>
+                                            <Sparkles className='w-6 h-6 text-black' />
+                                        </div>
+                                        <div>
+                                            <p className='text-primary text-sm font-medium tracking-wide flex items-center gap-1'>
+                                                <span className='w-2 h-2 bg-primary rounded-full animate-pulse'></span>
+                                                WELCOME BACK
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <h2 className='text-3xl font-bold bg-gradient-to-r from-white to-primary bg-clip-text text-transparent mb-2'>
+                                        {getUserName()}
+                                    </h2>
+                                    
+                                    <div className='flex items-center gap-2 mt-2'>
+                                        <div className='w-8 h-px bg-gradient-to-r from-primary to-transparent'></div>
+                                        <p className='text-gray-400 text-sm'>
+                                            {user.primaryEmailAddress?.emailAddress}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+
                             {/* Mobile Navigation Links */}
-                            <div className='flex flex-col items-center gap-8 w-full px-6'>
+                            <div className='flex flex-col gap-5 w-full'>
                                 {navItems.map((item, index) => (
                                     <motion.div
                                         key={item.name}
@@ -190,43 +250,54 @@ const Navbar = () => {
                                     >
                                         <Link
                                             to={item.path}
-                                            className='group flex items-center gap-3 text-2xl text-gray-400 hover:text-white font-medium py-2 transition-all duration-300'
+                                            className='group flex items-center gap-4 text-xl text-gray-300 hover:text-white font-medium py-3 px-4 rounded-xl hover:bg-white/5 transition-all duration-300'
                                             onClick={() => {
                                                 window.scrollTo(0, 0)
                                                 setIsopen(false)
                                             }}
                                         >
-                                            <item.icon className="w-6 h-6 group-hover:text-primary transition-colors" />
+                                            <item.icon className="w-6 h-6 text-primary" />
                                             <span className='group-hover:translate-x-1 transition'>{item.name}</span>
                                         </Link>
                                     </motion.div>
                                 ))}
                             </div>
 
-                            {/* Mobile Auth Section */}
-                            {!user ? (
-                                <motion.button 
+                            {/* Sign Out Button for Mobile */}
+                            {user && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.5 }}
+                                    className='mt-auto pt-8 pb-8'
+                                >
+                                    <button
+                                        onClick={handleSignOut}
+                                        className='flex items-center justify-center gap-3 w-full py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all duration-300'
+                                    >
+                                        <LogOut className='w-5 h-5' />
+                                        <span className='text-base font-medium'>Sign Out</span>
+                                    </button>
+                                </motion.div>
+                            )}
+
+                            {/* Sign In Button for Mobile when not logged in */}
+                            {!user && (
+                                <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.4 }}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => {
-                                        openSignIn()
-                                        setIsopen(false)
-                                    }}
-                                    className='mt-12 px-8 py-3 bg-gradient-to-r from-primary to-primary-dull rounded-full font-medium text-black shadow-lg hover:shadow-primary/50 transition-all duration-300'
+                                    className='mt-auto pt-8 pb-8'
                                 >
-                                    Sign In
-                                </motion.button>
-                            ) : (
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                    className='mt-12 text-center'
-                                >
-                                    <p className='text-white text-lg'>Welcome back, <span className='text-primary font-semibold'>{getUserName()}</span></p>
+                                    <button
+                                        onClick={() => {
+                                            openSignIn()
+                                            setIsopen(false)
+                                        }}
+                                        className='w-full py-3 rounded-xl bg-gradient-to-r from-primary to-primary-dull font-semibold text-black text-base shadow-lg hover:shadow-primary/50 transition-all duration-300'
+                                    >
+                                        Sign In to CineBook
+                                    </button>
                                 </motion.div>
                             )}
                         </motion.div>
