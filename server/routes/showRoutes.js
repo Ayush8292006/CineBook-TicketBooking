@@ -4,7 +4,7 @@ import { protectAdmin } from '../middleware/auth.js';
 
 const showRouter = express.Router();
 
-g
+
 showRouter.get('/now-playing', getNowPlayingMovies);  // Remove protectAdmin
 showRouter.post('/add', addShow);      
 showRouter.get('/all', getShows);
